@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Marge{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1>Marge · {{ debut|date:"F Y"|capfirst }}</h1>
+  <nav class="pager">
+    <a class="button" href="?mois={{ precedent }}">← Mois précédent</a>
+    {% if suivant %}<a class="button" href="?mois={{ suivant }}">Mois suivant →</a>{% endif %}
+  </nav>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><span>Chiffre d'affaires</span><strong>{{ ca|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Coût des articles vendus</span><strong>{{ cout|floatformat:"2g" }} €</strong></div>
+  <div class="kpi accent"><span>Marge brute</span><strong>{{ marge|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Taux de marge</span><strong>{% if taux is not None %}{{ taux|floatformat:1 }} %{% else %}—{% endif %}</strong></div>
+  <div class="kpi"><span>Pièces vendues</span><strong>{{ pieces }}</strong></div>
+</div>
+
+<h2>Articles les plus rentables du mois</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>#</th><th>Référence</th><th class="num">Pièces</th><th class="num">CA</th><th class="num">Marge</th><th class="num">Taux</th></tr></thead>
+  <tbody>
+  {% for r in par_reference %}
+    <tr>
+      <td data-label="#">{{ forloop.counter }}</td>
+      <td data-label="Référence">{{ r.reference__designation }}</td>
+      <td class="num" data-label="Pièces">{{ r.pieces }}</td>
+      <td class="num" data-label="CA">{{ r.ca|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Marge"><strong>{{ r.marge|floatformat:"2g" }} €</strong></td>
+      <td class="num" data-label="Taux">{{ r.taux|floatformat:1 }} %</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">Aucune vente ce mois-ci.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>Douze derniers mois</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Mois</th><th class="num">CA</th><th class="num">Marge</th><th class="num">Taux</th></tr></thead>
+  <tbody>
+  {% for h in historique %}
+    <tr>
+      <td data-label="Mois"><a href="?mois={{ h.mois|date:'Y-m' }}">{{ h.mois|date:"F Y"|capfirst }}</a></td>
+      <td class="num" data-label="CA">{{ h.ca|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Marge">{{ h.marge|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Taux">{% if h.taux is not None %}{{ h.taux|floatformat:1 }} %{% else %}—{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="muted">Aucune vente sur la période.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

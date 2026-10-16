@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Maison d'Annae</h1>
+  <p class="muted">Gestion de stock</p>
+  <form method="post">{% csrf_token %}
+    {% if form.errors %}<div class="msg msg-error">Identifiant ou mot de passe incorrect.</div>{% endif %}
+    <label>Identifiant <input name="username" autocomplete="username" autofocus required></label>
+    <label>Mot de passe <input type="password" name="password" autocomplete="current-password" required></label>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="primary block">Se connecter</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Stock{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1>Stock</h1>
+  <form method="get" class="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Rechercher une référence…" aria-label="Rechercher">
+  </form>
+  {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}">+ Nouvelle référence</a>{% endif %}
+</div>
+
+<div class="table-wrap">
+<table class="stock">
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      {% if user.is_admin %}<th class="num">Coût d'achat</th>{% endif %}
+      <th class="num">Prix de vente</th>
+      {% if user.is_admin %}<th class="num">Marge unit.</th>{% endif %}
+      <th class="num">Stock</th>
+      <th>Vendre</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for ref in references %}
+    <tr>
+      <td data-label="Désignation"><strong>{{ ref.designation }}</strong></td>
+      {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
+      <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
+      {% if user.is_admin %}<td class="num" data-label="Marge unit.">{{ ref.marge_unitaire|floatformat:"2g" }} €</td>{% endif %}
+      <td class="num" data-label="Stock"><span class="qty {% if ref.quantite == 0 %}zero{% elif ref.quantite <= 2 %}low{% endif %}">{{ ref.quantite }}</span></td>
+      <td data-label="Vendre">
+        <form method="post" action="{% url 'vendre' ref.pk %}" class="sell">{% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <input type="number" name="quantite" value="1" min="1" max="{{ ref.quantite }}" aria-label="Quantité vendue" {% if ref.quantite == 0 %}disabled{% endif %}>
+          <button class="primary" {% if ref.quantite == 0 %}disabled{% endif %}>Vendre</button>
+        </form>
+      </td>
+      <td class="actions">
+        <a class="button" href="{% url 'ajuster' ref.pk %}">Ajuster</a>
+        {% if user.is_admin %}<a class="button" href="{% url 'reference_edit' ref.pk %}">Modifier</a>{% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7" class="muted">Aucune référence{% if q %} pour « {{ q }} »{% endif %}.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

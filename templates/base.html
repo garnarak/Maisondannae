@@ -1,0 +1,33 @@
+{% load static %}<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Stock{% endblock %} · Maison d'Annae</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  {% if user.is_authenticated %}
+  <header class="topbar">
+    <a class="brand" href="{% url 'stock_list' %}">Maison d'Annae</a>
+    <nav>
+      <a href="{% url 'stock_list' %}" {% if request.resolver_match.url_name == 'stock_list' %}aria-current="page"{% endif %}>Stock</a>
+      <a href="{% url 'ventes' %}" {% if request.resolver_match.url_name == 'ventes' %}aria-current="page"{% endif %}>Ventes</a>
+      {% if user.is_admin %}
+      <a href="{% url 'marge' %}" {% if request.resolver_match.url_name == 'marge' %}aria-current="page"{% endif %}>Marge</a>
+      <a href="{% url 'admin:index' %}">Administration</a>
+      {% endif %}
+      <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}
+        <button class="link">Déconnexion ({{ user.get_short_name|default:user.username }})</button>
+      </form>
+    </nav>
+  </header>
+  {% endif %}
+  <main>
+    {% for message in messages %}
+    <div class="msg msg-{{ message.tags }}" role="status">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

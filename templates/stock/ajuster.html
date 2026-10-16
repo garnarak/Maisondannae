@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Ajuster · {{ ref }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'stock_list' %}">← Retour au stock</a></p>
+<h1>{{ ref.designation }}</h1>
+<p class="lead">Stock actuel : <span class="qty big {% if ref.quantite == 0 %}zero{% elif ref.quantite <= 2 %}low{% endif %}">{{ ref.quantite }}</span></p>
+
+<div class="grid2">
+  <section class="card">
+    <h2>Ajuster le stock</h2>
+    <p class="muted">Pour une réception, une casse ou une correction d'inventaire. Les ventes passent par le bouton « Vendre ».</p>
+    <form method="post">{% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+      <label>{{ field.label }} {{ field }}</label>
+      {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+      {% for e in field.errors %}<div class="error">{{ e }}</div>{% endfor %}
+      {% endfor %}
+      <button class="primary block">Enregistrer</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Derniers ajustements</h2>
+    <table>
+      <thead><tr><th>Date</th><th class="num">Variation</th><th>Motif</th><th>Par</th></tr></thead>
+      <tbody>
+      {% for a in ajustements %}
+        <tr>
+          <td>{{ a.date|date:"d/m/Y H:i" }}</td>
+          <td class="num">{% if a.variation > 0 %}+{% endif %}{{ a.variation }}</td>
+          <td>{{ a.get_motif_display }}{% if a.commentaire %}<br><small class="muted">{{ a.commentaire }}</small>{% endif %}</td>
+          <td>{{ a.utilisateur.username|default:"—" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="muted">Aucun ajustement.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

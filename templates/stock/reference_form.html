@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ titre }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'stock_list' %}">← Retour au stock</a></p>
+<div class="card narrow">
+  <h1>{{ titre }}</h1>
+  <form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      {% if field.field.widget.input_type == "checkbox" %}
+      <label class="check">{{ field }} {{ field.label }}</label>
+      {% else %}
+      <label>{{ field.label }} {{ field }}</label>
+      {% endif %}
+      {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+      {% for e in field.errors %}<div class="error">{{ e }}</div>{% endfor %}
+    {% endfor %}
+    {% if ref %}<p class="muted">Stock actuel : {{ ref.quantite }}. Pour le modifier, utilisez <a href="{% url 'ajuster' ref.pk %}">Ajuster</a>.</p>{% endif %}
+    <button class="primary block">Enregistrer</button>
+  </form>
+</div>
+{% endblock %}
