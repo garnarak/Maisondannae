@@ -5,6 +5,7 @@ services:
     runtime: python
     plan: starter
     buildCommand: ./build.sh
+    preDeployCommand: ./predeploy.sh
     startCommand: gunicorn config.wsgi
     envVars:
       - key: DATABASE_URL

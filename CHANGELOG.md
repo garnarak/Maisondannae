@@ -11,7 +11,7 @@ Le suffixe `-beta` indique une version de test.
 
 Préparation de la mise en ligne, sans changement fonctionnel.
 
-- Configuration d'hébergement Render (`render.yaml`, `build.sh`)
+- Configuration d'hébergement Render (`render.yaml`, `build.sh`, `predeploy.sh`)
 - Création automatique du compte administrateur au premier déploiement
 - Pages « Accès refusé » et « Page introuvable » en français
 - Numéro de version et mention « Bêta » en bas de page
