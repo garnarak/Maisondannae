@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Accès refusé{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Accès refusé</h1>
+  <p>Votre compte n'a pas accès à cette page. Si vous pensez que c'est une erreur, contactez l'administrateur.</p>
+  <a class="button primary block" href="{% url 'stock_list' %}">Retour au stock</a>
+</div>
+{% endblock %}

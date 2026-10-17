@@ -39,18 +39,35 @@ Puis ouvrir http://127.0.0.1:8000. Les autres comptes se créent dans
 
 Tests : `.venv/bin/python manage.py test`
 
-## Déploiement
+## Gestion des versions
 
-Variables d'environnement à définir en production :
+- La branche `main` contient toujours une version stable, prête à être mise en ligne.
+- Chaque évolution se fait sur une branche dédiée, puis passe par une *pull request* :
+  les tests se lancent automatiquement sur GitHub avant la fusion dans `main`.
+- Une version publiée = une *release* GitHub avec son étiquette (`v0.1.0-beta`, …),
+  le numéro mis à jour dans `APP_VERSION` (`config/settings.py`) et une entrée dans
+  `CHANGELOG.md`.
 
-| Variable | Exemple |
+## Mise en ligne (Render)
+
+Le fichier `render.yaml` décrit l'installation complète : l'application et sa base PostgreSQL.
+
+1. Créer un compte sur [render.com](https://render.com) avec son compte GitHub.
+2. **New → Blueprint**, choisir le dépôt `Maisondannae`.
+3. Renseigner `DJANGO_ADMIN_USERNAME` et `DJANGO_ADMIN_PASSWORD` : le compte
+   administrateur est créé au premier déploiement.
+4. Valider. L'adresse publique s'affiche une fois le déploiement terminé
+   (de la forme `https://maisondannae.onrender.com`).
+
+Chaque fusion dans `main` redéploie automatiquement l'application.
+
+Variables d'environnement reconnues :
+
+| Variable | Rôle |
 | --- | --- |
-| `DJANGO_DEBUG` | `0` |
-| `DJANGO_SECRET_KEY` | une longue chaîne aléatoire |
-| `DJANGO_ALLOWED_HOSTS` | `stock.maisondannae.fr` |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://stock.maisondannae.fr` |
-| `DATABASE_URL` | `postgres://user:pass@host:5432/db` |
-
-Le `Procfile` convient aux hébergeurs de type Railway, Render ou Heroku :
-migrations au déploiement, puis `gunicorn`. Lancer aussi
-`python manage.py collectstatic --noinput` à la construction.
+| `DJANGO_DEBUG` | `0` en production |
+| `DJANGO_SECRET_KEY` | clé secrète (générée par Render) |
+| `DATABASE_URL` | base PostgreSQL (fournie par Render) |
+| `DJANGO_ADMIN_USERNAME`, `DJANGO_ADMIN_PASSWORD` | compte administrateur créé au premier déploiement |
+| `DJANGO_ALLOWED_HOSTS` | noms de domaine supplémentaires (ex. un domaine personnalisé) |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://` + ces mêmes domaines |
