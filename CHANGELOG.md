@@ -7,12 +7,13 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 0.1.1-beta — non publiée
+## 0.1.1-beta — 17/10/2026
 
 Préparation de la mise en ligne, sans changement fonctionnel.
 
 - Configuration d'hébergement Render (`render.yaml`, `build.sh`, `predeploy.sh`)
 - Création automatique du compte administrateur au premier déploiement
+- Mise en ligne sur https://maisondannae.onrender.com
 - Pages « Accès refusé » et « Page introuvable » en français
 - Numéro de version et mention « Bêta » en bas de page
 - Tests lancés automatiquement sur GitHub à chaque modification
