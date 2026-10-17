@@ -29,5 +29,6 @@
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
+  <footer class="footer">Version {{ APP_VERSION }}{% if "beta" in APP_VERSION %} · <span class="badge">Bêta</span>{% endif %}</footer>
 </body>
 </html>

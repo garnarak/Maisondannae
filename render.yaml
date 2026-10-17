@@ -1,0 +1,27 @@
+# Configuration Render (Blueprint) : un service web + une base PostgreSQL.
+services:
+  - type: web
+    name: maisondannae
+    runtime: python
+    plan: starter
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: maisondannae-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_ADMIN_USERNAME
+        sync: false
+      - key: DJANGO_ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: maisondannae-db
+    plan: basic-256mb
+    databaseName: maisondannae
+    user: maisondannae

@@ -78,3 +78,6 @@ tbody tr:last-child td { border-bottom: 0; }
   .table-wrap td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: .85rem; text-align: left; }
   .actions { justify-content: stretch; } .actions .button { flex: 1; text-align: center; }
 }
+
+.footer { max-width: 1100px; margin: 24px auto 0; padding: 16px; color: var(--muted); font-size: .8rem; text-align: center; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; background: #fdf4e3; color: var(--warn); font-weight: 600; }

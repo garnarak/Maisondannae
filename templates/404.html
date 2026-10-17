@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Page introuvable{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Page introuvable</h1>
+  <p>Cette page n'existe pas ou a été déplacée.</p>
+  <a class="button primary block" href="{% url 'stock_list' %}">Retour au stock</a>
+</div>
+{% endblock %}
