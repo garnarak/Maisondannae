@@ -15,6 +15,7 @@
   <div class="kpi accent"><span>Marge brute</span><strong>{{ marge|floatformat:"2g" }} €</strong></div>
   <div class="kpi"><span>Taux de marge</span><strong>{% if taux is not None %}{{ taux|floatformat:1 }} %{% else %}—{% endif %}</strong></div>
   <div class="kpi"><span>Pièces vendues</span><strong>{{ pieces }}</strong></div>
+  <div class="kpi"><span>Soldes accordés ({{ pieces_soldees }} pièce{{ pieces_soldees|pluralize }})</span><strong>{{ remises|floatformat:"2g" }} €</strong></div>
 </div>
 
 <h2>Articles les plus rentables du mois</h2>

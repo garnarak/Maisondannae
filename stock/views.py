@@ -8,7 +8,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from django.utils import formats, timezone
 from django.views.decorators.http import require_POST
 
 from . import services
@@ -17,6 +17,7 @@ from .models import Reference, Vente
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
+REMISE = ExpressionWrapper((F("prix_catalogue") - F("prix_unitaire")) * F("quantite"), output_field=MONEY)
 COUT = ExpressionWrapper(F("cout_unitaire") * F("quantite"), output_field=MONEY)
 
 
@@ -47,13 +48,17 @@ def vendre(request, pk):
     form = VenteForm(request.POST)
     if form.is_valid():
         try:
-            vente = services.enregistrer_vente(ref.pk, form.cleaned_data["quantite"], request.user)
+            vente = services.enregistrer_vente(
+                ref.pk, form.cleaned_data["quantite"], request.user, remise_pct=form.cleaned_data["remise_pct"]
+            )
         except services.StockInsuffisant as e:
             messages.error(request, f"{ref} : {e}")
         else:
-            messages.success(request, f"Vente enregistrée : {vente.quantite} × {ref}.")
+            prix = formats.number_format(vente.prix_unitaire, 2, use_l10n=True)
+            solde = f" soldé −{vente.remise_pct} % à {prix} € pièce" if vente.remise_pct else ""
+            messages.success(request, f"Vente enregistrée : {vente.quantite} × {ref}{solde}.")
     else:
-        messages.error(request, "Quantité invalide.")
+        messages.error(request, "Quantité ou solde invalide.")
     return redirect(request.POST.get("next") or "stock_list")
 
 
@@ -146,7 +151,10 @@ def marge(request):
     end = datetime.datetime.combine(fin, datetime.time.min, tzinfo=tz)
     ventes_mois = Vente.objects.filter(date__gte=start, date__lt=end)
 
-    totaux = ventes_mois.aggregate(ca=Sum(CA), cout=Sum(COUT), pieces=Sum("quantite"))
+    totaux = ventes_mois.aggregate(
+        ca=Sum(CA), cout=Sum(COUT), remises=Sum(REMISE), pieces=Sum("quantite"),
+        pieces_soldees=Sum("quantite", filter=Q(remise_pct__gt=0)),
+    )
     ca = totaux["ca"] or Decimal(0)
     cout = totaux["cout"] or Decimal(0)
 
@@ -184,6 +192,8 @@ def marge(request):
             "marge": ca - cout,
             "taux": _taux(ca - cout, ca),
             "pieces": totaux["pieces"] or 0,
+            "remises": totaux["remises"] or Decimal(0),
+            "pieces_soldees": totaux["pieces_soldees"] or 0,
             "par_reference": par_reference,
             "historique": historique,
             "precedent": precedent.strftime("%Y-%m"),

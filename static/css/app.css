@@ -54,6 +54,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .actions { display: flex; gap: 6px; justify-content: flex-end; }
 .sell { display: flex; gap: 6px; }
 .sell input { width: 70px; }
+.sell select { width: 11.5em; }
 
 .qty { display: inline-block; min-width: 2.2em; text-align: center; padding: 2px 8px; border-radius: 999px; background: #eef6f1; color: var(--ok); font-weight: 600; }
 .qty.low { background: #fdf4e3; color: var(--warn); }
@@ -76,6 +77,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .table-wrap tr { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; padding: 6px 0; }
   .table-wrap td { border: 0; padding: 6px 14px; display: flex; justify-content: space-between; gap: 12px; text-align: right; }
   .table-wrap td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: .85rem; text-align: left; }
+  .sell { flex-wrap: wrap; justify-content: flex-end; }
   .actions { justify-content: stretch; } .actions .button { flex: 1; text-align: center; }
 }
 

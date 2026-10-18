@@ -18,7 +18,10 @@
       <td data-label="Date">{{ v.date|date:"d/m/Y H:i" }}</td>
       <td data-label="Référence">{{ v.reference }}</td>
       <td class="num" data-label="Qté">{{ v.quantite }}</td>
-      <td class="num" data-label="Prix unit.">{{ v.prix_unitaire|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Prix unit.">
+        {% if v.remise_pct %}<s class="muted">{{ v.prix_catalogue|floatformat:"2g" }} €</s> <span class="badge">−{{ v.remise_pct }} %</span><br>{% endif %}
+        {{ v.prix_unitaire|floatformat:"2g" }} €
+      </td>
       <td class="num" data-label="Total">{{ v.chiffre_affaires|floatformat:"2g" }} €</td>
       {% if user.is_admin %}<td class="num" data-label="Marge">{{ v.marge|floatformat:"2g" }} €</td>{% endif %}
       <td data-label="Vendeur">{{ v.vendeur.username|default:"—" }}</td>

@@ -35,6 +35,10 @@
         <form method="post" action="{% url 'vendre' ref.pk %}" class="sell">{% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
           <input type="number" name="quantite" value="1" min="1" max="{{ ref.quantite }}" aria-label="Quantité vendue" {% if ref.quantite == 0 %}disabled{% endif %}>
+          <select name="remise_pct" aria-label="Solde" {% if ref.quantite == 0 %}disabled{% endif %}>
+            <option value="0" selected>Prix normal</option>
+            {% for pct, prix in ref.prix_soldes %}<option value="{{ pct }}">−{{ pct }} % · {{ prix|floatformat:"2g" }} €</option>{% endfor %}
+          </select>
           <button class="primary" {% if ref.quantite == 0 %}disabled{% endif %}>Vendre</button>
         </form>
       </td>
