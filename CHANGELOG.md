@@ -15,6 +15,9 @@ Le suffixe `-beta` indique une version de test.
   la marge est calculée sur le prix encaissé
 - Historique des ventes : prix initial barré et pourcentage affichés
 - Synthèse de marge : montant total des soldes accordés dans le mois
+- Nouveau design aux couleurs de la boutique : fuchsia, or et ivoire, titres en
+  Cormorant Garamond, texte en Jost, logo dans l'en-tête et page de connexion illustrée
+- Tablette paysage : la liste du stock s'affiche en cartes sur deux colonnes
 
 ## 0.1.1-beta — 17/10/2026
 

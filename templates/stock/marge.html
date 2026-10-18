@@ -25,7 +25,7 @@
   <tbody>
   {% for r in par_reference %}
     <tr>
-      <td data-label="#">{{ forloop.counter }}</td>
+      <td data-label="#"><span class="rank">{{ forloop.counter }}</span></td>
       <td data-label="Référence">{{ r.reference__designation }}</td>
       <td class="num" data-label="Pièces">{{ r.pieces }}</td>
       <td class="num" data-label="CA">{{ r.ca|floatformat:"2g" }} €</td>

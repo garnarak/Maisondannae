@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ titre }}{% endblock %}
 {% block content %}
-<p><a href="{% url 'stock_list' %}">← Retour au stock</a></p>
+<a class="back" href="{% url 'stock_list' %}">← Retour au stock</a>
 <div class="card narrow">
   <h1>{{ titre }}</h1>
   <form method="post">{% csrf_token %}
