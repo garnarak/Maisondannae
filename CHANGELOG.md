@@ -7,7 +7,7 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 0.2.0-beta — non publiée
+## 0.2.0-beta — 18/10/2026
 
 - Solde au moment de la vente : le vendeur choisit −10, −20, −30, −40, −50 ou −70 %
   du prix de vente initial ; la liste affiche directement le prix soldé
