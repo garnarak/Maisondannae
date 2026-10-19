@@ -143,3 +143,11 @@ main.full { padding: 0; max-width: none; }
 
 .footer { max-width: 1240px; margin: 24px auto 0; padding: 16px; color: var(--muted); font-size: .8rem; text-align: center; }
 .badge { display: inline-block; padding: 1px 10px; border-radius: 999px; background: var(--gold-soft); color: var(--gold-text); font-weight: 500; }
+
+/* Téléphone : indicateurs sur deux colonnes, le premier en pleine largeur. */
+@media (max-width: 520px) {
+  .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpis .kpi:first-child { grid-column: 1 / -1; }
+  .kpi { padding: 14px 16px; }
+  .kpi strong { font-size: 1.6rem; }
+}

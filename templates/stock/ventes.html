@@ -1,7 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Ventes{% endblock %}
 {% block content %}
-<h1>{% if user.is_admin %}Ventes récentes{% else %}Ventes du jour{% endif %}</h1>
+<h1>Ventes</h1>
+
+<h2>Aujourd'hui · {% now "l j F" %}</h2>
+<div class="kpis">
+  <div class="kpi accent"><span>Chiffre d'affaires du jour</span><strong>{{ jour_ca|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Pièces vendues</span><strong>{{ jour_pieces }}</strong></div>
+  <div class="kpi"><span>Nombre de ventes</span><strong>{{ jour_nb }}</strong></div>
+  {% if jour_remises %}<div class="kpi"><span>Soldes accordés</span><strong>{{ jour_remises|floatformat:"2g" }} €</strong></div>{% endif %}
+  {% if user.is_admin %}<div class="kpi"><span>Marge du jour</span><strong>{{ jour_marge|floatformat:"2g" }} €</strong></div>{% endif %}
+</div>
+
+<h2>{% if user.is_admin %}Ventes récentes{% else %}Détail des ventes du jour{% endif %}</h2>
 <div class="table-wrap">
 <table>
   <thead>

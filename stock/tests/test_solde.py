@@ -65,3 +65,43 @@ class SoldeTests(TestCase):
         self.assertEqual(r.context["ca"], Decimal("215.97"))
         self.assertEqual(r.context["remises"], Decimal("54.00"))
         self.assertEqual(r.context["pieces_soldees"], 2)
+
+
+class ChiffreAffairesDuJourTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
+        cls.vendeuse = User.objects.create_user("lea", password="x")
+        cls.robe = Reference.objects.create(
+            designation="Robe lin", cout_achat=Decimal("30.00"), prix_vente=Decimal("89.99"), quantite=10
+        )
+
+    def test_total_du_jour(self):
+        import datetime
+
+        from django.utils import timezone
+
+        services.enregistrer_vente(self.robe.pk, 2, self.vendeuse, remise_pct=30)  # 2 × 62,99
+        services.enregistrer_vente(self.robe.pk, 1, self.vendeuse)  # 89,99
+        Vente.objects.create(  # hier : ne compte pas
+            reference=self.robe, quantite=1, prix_unitaire=Decimal("89.99"), cout_unitaire=Decimal("30"),
+            date=timezone.now() - datetime.timedelta(days=1),
+        )
+        self.client.force_login(self.vendeuse)
+        r = self.client.get(reverse("ventes"))
+        self.assertEqual(r.context["jour_ca"], Decimal("215.97"))
+        self.assertEqual(r.context["jour_pieces"], 3)
+        self.assertEqual(r.context["jour_nb"], 2)
+        self.assertContains(r, "215,97 €")
+        self.assertNotContains(r, "Marge du jour")
+
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("ventes"))
+        self.assertContains(r, "Marge du jour")
+        self.assertEqual(r.context["jour_marge"], Decimal("125.97"))
+
+    def test_journee_sans_vente(self):
+        self.client.force_login(self.vendeuse)
+        r = self.client.get(reverse("ventes"))
+        self.assertEqual(r.context["jour_ca"], Decimal("0"))
+        self.assertContains(r, "0,00 €")

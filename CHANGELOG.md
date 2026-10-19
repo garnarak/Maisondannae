@@ -7,7 +7,7 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 0.2.0-beta — 18/10/2026
+## 0.2.0-beta — 19/10/2026
 
 - Solde au moment de la vente : le vendeur choisit −10, −20, −30, −40, −50 ou −70 %
   du prix de vente initial ; la liste affiche directement le prix soldé
@@ -18,6 +18,8 @@ Le suffixe `-beta` indique une version de test.
 - Nouveau design aux couleurs de la boutique : fuchsia, or et ivoire, titres en
   Cormorant Garamond, texte en Jost, logo dans l'en-tête et page de connexion illustrée
 - Tablette paysage : la liste du stock s'affiche en cartes sur deux colonnes
+- Page Ventes : chiffre d'affaires, pièces vendues et nombre de ventes de la journée
+  (et marge du jour pour l'administrateur)
 
 ## 0.1.1-beta — 17/10/2026
 

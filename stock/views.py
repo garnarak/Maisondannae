@@ -5,7 +5,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import formats, timezone
@@ -111,11 +111,27 @@ def reference_edit(request, pk):
 
 @login_required
 def ventes(request):
+    aujourd_hui = Vente.objects.filter(date__date=timezone.localdate())
+    jour = aujourd_hui.aggregate(
+        ca=Sum(CA), cout=Sum(COUT), remises=Sum(REMISE), pieces=Sum("quantite"), nb=Count("id")
+    )
+    ca = jour["ca"] or Decimal(0)
     qs = Vente.objects.select_related("reference", "vendeur")
     if not request.user.is_admin:
         # Les utilisateurs restreints ne voient que les ventes du jour.
         qs = qs.filter(date__date=timezone.localdate())
-    return render(request, "stock/ventes.html", {"ventes": qs[:200]})
+    return render(
+        request,
+        "stock/ventes.html",
+        {
+            "ventes": qs[:200],
+            "jour_ca": ca,
+            "jour_pieces": jour["pieces"] or 0,
+            "jour_nb": jour["nb"],
+            "jour_remises": jour["remises"] or Decimal(0),
+            "jour_marge": ca - (jour["cout"] or Decimal(0)),
+        },
+    )
 
 
 @admin_required
