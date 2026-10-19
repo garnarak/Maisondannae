@@ -48,7 +48,7 @@ class DroitsTests(BaseTestCase):
         self.assertEqual(self.robe.prix_vente, Decimal("89.00"))
 
     def test_restreint_ne_voit_pas_la_marge_des_ventes(self):
-        services.enregistrer_vente(self.robe.pk, 1, self.vendeuse)
+        services.enregistrer_vente(self.robe.pk, 1, self.admin)
         self.client.force_login(self.vendeuse)
         r = self.client.get(reverse("ventes"))
         self.assertContains(r, "Robe lin")

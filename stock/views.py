@@ -126,9 +126,6 @@ def ventes(request):
     today = timezone.localdate()
     debut_mois = today.replace(day=1)
     qs = Vente.objects.select_related("reference", "vendeur")
-    if not request.user.is_admin:
-        # Un vendeur ne voit que ses propres ventes et ses propres chiffres.
-        qs = qs.filter(vendeur=request.user)
     ventes_jour = qs.filter(date__date=today)
     ventes_mois = qs.filter(date__date__gte=debut_mois, date__date__lte=today)
 

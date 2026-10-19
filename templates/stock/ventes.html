@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Ventes</h1>
 
-<h2>{% if user.is_admin %}Aujourd'hui{% else %}Mes ventes aujourd'hui{% endif %} · {% now "l j F" %}</h2>
+<h2>Aujourd'hui · {% now "l j F" %}</h2>
 <div class="kpis">
   <div class="kpi accent"><span>Chiffre d'affaires du jour</span><strong>{{ jour.ca|floatformat:"2g" }} €</strong></div>
   <div class="kpi"><span>Pièces vendues</span><strong>{{ jour.pieces }}</strong></div>
@@ -19,7 +19,8 @@
     <tr>
       <th>Heure</th><th>Référence</th><th class="num">Qté</th><th class="num">Prix unit.</th><th class="num">Total</th>
       {% if user.is_admin %}<th class="num">Marge</th>{% endif %}
-      {% if user.is_admin %}<th>Vendeur</th><th></th>{% endif %}
+      <th>Vendeur</th>
+      {% if user.is_admin %}<th></th>{% endif %}
     </tr>
   </thead>
   <tbody>
@@ -32,7 +33,7 @@
 </table>
 </div>
 
-<h2 class="section">{% if user.is_admin %}Ce mois-ci{% else %}Mes ventes ce mois-ci{% endif %} · {{ debut_mois|date:"F Y" }}</h2>
+<h2 class="section">Ce mois-ci · {{ debut_mois|date:"F Y" }}</h2>
 <div class="kpis">
   <div class="kpi accent"><span>Chiffre d'affaires du mois</span><strong>{{ mois.ca|floatformat:"2g" }} €</strong></div>
   <div class="kpi"><span>Pièces vendues</span><strong>{{ mois.pieces }}</strong></div>
@@ -41,20 +42,21 @@
   {% if user.is_admin %}<div class="kpi"><span>Marge du mois</span><strong>{{ mois.marge|floatformat:"2g" }} €</strong></div>{% endif %}
 </div>
 
-<h2>{% if user.is_admin %}Historique des ventes du mois{% else %}Mon historique du mois{% endif %}</h2>
+<h2>Historique des ventes du mois</h2>
 <div class="table-wrap">
 <table class="historique">
   <thead>
     <tr>
       <th>Heure</th><th>Référence</th><th class="num">Qté</th><th class="num">Prix unit.</th><th class="num">Total</th>
       {% if user.is_admin %}<th class="num">Marge</th>{% endif %}
-      {% if user.is_admin %}<th>Vendeur</th><th></th>{% endif %}
+      <th>Vendeur</th>
+      {% if user.is_admin %}<th></th>{% endif %}
     </tr>
   </thead>
   {% for j in jours %}
   <tbody>
     <tr class="jour">
-      <th colspan="{% if user.is_admin %}8{% else %}5{% endif %}">
+      <th colspan="{% if user.is_admin %}8{% else %}6{% endif %}">
         <div class="jour-ligne">
           <span>{{ j.date|date:"l j F"|capfirst }}</span>
           <span class="jour-total">{{ j.pieces }} pièce{{ j.pieces|pluralize }} · {{ j.ca|floatformat:"2g" }} €</span>
