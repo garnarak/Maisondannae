@@ -1,39 +1,86 @@
 {% extends "base.html" %}
-{% block title %}Ventes{% endblock %}
+{% block title %}{% if mes_ventes %}Mes ventes{% elif vendeuse %}Ventes de {{ vendeuse.get_short_name|default:vendeuse.username }}{% else %}Ventes{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if user.is_admin %}Ventes récentes{% else %}Ventes du jour{% endif %}</h1>
+<div class="toolbar">
+  <h1>{% if mes_ventes %}Mes ventes{% elif vendeuse %}Ventes de {{ vendeuse.get_short_name|default:vendeuse.username }}{% else %}Ventes{% endif %}</h1>
+  <nav class="bascule" aria-label="Choix des ventes affichées">
+    <a class="button{% if not mes_ventes and not vendeuse %} primary{% endif %}" href="{% url 'ventes' %}" {% if not mes_ventes and not vendeuse %}aria-current="page"{% endif %}>Toutes les ventes</a>
+    <a class="button{% if mes_ventes %} primary{% endif %}" href="{% url 'mes_ventes' %}" {% if mes_ventes %}aria-current="page"{% endif %}>Mes ventes</a>
+    {% for v in vendeuses %}
+    <a class="button{% if vendeuse.pk == v.pk %} primary{% endif %}" href="{% url 'ventes_vendeuse' v.pk %}" {% if vendeuse.pk == v.pk %}aria-current="page"{% endif %}>{{ v.get_short_name|default:v.username }}</a>
+    {% endfor %}
+  </nav>
+</div>
+{% if mes_ventes %}<p class="muted">Seules les ventes enregistrées avec votre compte apparaissent ici.</p>{% endif %}
+{% if vendeuse %}<p class="muted">Seules les ventes enregistrées avec le compte de {{ vendeuse.get_short_name|default:vendeuse.username }} apparaissent ici.</p>{% endif %}
+
+<h2>Aujourd'hui · {% now "l j F" %}</h2>
+<div class="kpis">
+  <div class="kpi accent"><span>Chiffre d'affaires du jour</span><strong>{{ jour.ca|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Pièces vendues</span><strong>{{ jour.pieces }}</strong></div>
+  <div class="kpi"><span>Nombre de ventes</span><strong>{{ jour.nb }}</strong></div>
+  {% if jour.remises %}<div class="kpi"><span>Soldes accordés</span><strong>{{ jour.remises|floatformat:"2g" }} €</strong></div>{% endif %}
+  {% if user.is_admin %}<div class="kpi"><span>Marge du jour</span><strong>{{ jour.marge|floatformat:"2g" }} €</strong></div>{% endif %}
+</div>
+
+<h2>Détail des ventes du jour</h2>
 <div class="table-wrap">
 <table>
   <thead>
     <tr>
-      <th>Date</th><th>Référence</th><th class="num">Qté</th><th class="num">Prix unit.</th><th class="num">Total</th>
+      <th>Heure</th><th>Référence</th><th class="num">Qté</th><th class="num">Prix unit.</th><th class="num">Total</th>
       {% if user.is_admin %}<th class="num">Marge</th>{% endif %}
       <th>Vendeur</th>
       {% if user.is_admin %}<th></th>{% endif %}
     </tr>
   </thead>
   <tbody>
-  {% for v in ventes %}
-    <tr>
-      <td data-label="Date">{{ v.date|date:"d/m/Y H:i" }}</td>
-      <td data-label="Référence">{{ v.reference }}</td>
-      <td class="num" data-label="Qté">{{ v.quantite }}</td>
-      <td class="num" data-label="Prix unit.">{{ v.prix_unitaire|floatformat:"2g" }} €</td>
-      <td class="num" data-label="Total">{{ v.chiffre_affaires|floatformat:"2g" }} €</td>
-      {% if user.is_admin %}<td class="num" data-label="Marge">{{ v.marge|floatformat:"2g" }} €</td>{% endif %}
-      <td data-label="Vendeur">{{ v.vendeur.username|default:"—" }}</td>
-      {% if user.is_admin %}
-      <td>
-        <form method="post" action="{% url 'annuler_vente' v.pk %}" onsubmit="return confirm('Annuler cette vente et remettre l\'article en stock ?')">{% csrf_token %}
-          <button class="danger">Annuler</button>
-        </form>
-      </td>
-      {% endif %}
-    </tr>
+  {% for v in ventes_jour %}
+    {% include "stock/_vente_ligne.html" %}
   {% empty %}
-    <tr><td colspan="8" class="muted">Aucune vente.</td></tr>
+    <tr><td colspan="8" class="muted">Aucune vente aujourd'hui.</td></tr>
   {% endfor %}
   </tbody>
+</table>
+</div>
+
+<h2 class="section">Ce mois-ci · {{ debut_mois|date:"F Y" }}</h2>
+<div class="kpis">
+  <div class="kpi accent"><span>Chiffre d'affaires du mois</span><strong>{{ mois.ca|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Pièces vendues</span><strong>{{ mois.pieces }}</strong></div>
+  <div class="kpi"><span>Nombre de ventes</span><strong>{{ mois.nb }}</strong></div>
+  {% if mois.remises %}<div class="kpi"><span>Soldes accordés</span><strong>{{ mois.remises|floatformat:"2g" }} €</strong></div>{% endif %}
+  {% if user.is_admin %}<div class="kpi"><span>Marge du mois</span><strong>{{ mois.marge|floatformat:"2g" }} €</strong></div>{% endif %}
+</div>
+
+<h2>Historique des ventes du mois</h2>
+<div class="table-wrap">
+<table class="historique">
+  <thead>
+    <tr>
+      <th>Heure</th><th>Référence</th><th class="num">Qté</th><th class="num">Prix unit.</th><th class="num">Total</th>
+      {% if user.is_admin %}<th class="num">Marge</th>{% endif %}
+      <th>Vendeur</th>
+      {% if user.is_admin %}<th></th>{% endif %}
+    </tr>
+  </thead>
+  {% for j in jours %}
+  <tbody>
+    <tr class="jour">
+      <th colspan="{% if user.is_admin %}8{% else %}6{% endif %}">
+        <div class="jour-ligne">
+          <span>{{ j.date|date:"l j F"|capfirst }}</span>
+          <span class="jour-total">{{ j.pieces }} pièce{{ j.pieces|pluralize }} · {{ j.ca|floatformat:"2g" }} €</span>
+        </div>
+      </th>
+    </tr>
+    {% for v in j.ventes %}
+      {% include "stock/_vente_ligne.html" %}
+    {% endfor %}
+  </tbody>
+  {% empty %}
+  <tbody><tr><td colspan="8" class="muted">Aucune vente les jours précédents ce mois-ci.</td></tr></tbody>
+  {% endfor %}
 </table>
 </div>
 {% endblock %}

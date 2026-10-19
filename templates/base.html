@@ -3,16 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Stock{% endblock %} · Maison d'Annae</title>
+  <title>{% block title %}Stock{% endblock %} · Maison d'Annaé</title>
+  <link rel="icon" href="{% static 'img/logo-petit.jpg' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500&display=swap">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
   {% if user.is_authenticated %}
   <header class="topbar">
-    <a class="brand" href="{% url 'stock_list' %}">Maison d'Annae</a>
+    <a class="brand" href="{% url 'stock_list' %}" aria-label="Maison d'Annaé — stock">
+      <img src="{% static 'img/logo-petit.jpg' %}" alt="">
+      <span class="brand-name"><small>MAISON</small><b>D'ANNAÉ</b></span>
+    </a>
     <nav>
       <a href="{% url 'stock_list' %}" {% if request.resolver_match.url_name == 'stock_list' %}aria-current="page"{% endif %}>Stock</a>
-      <a href="{% url 'ventes' %}" {% if request.resolver_match.url_name == 'ventes' %}aria-current="page"{% endif %}>Ventes</a>
+      <a href="{% url 'ventes' %}" {% if request.resolver_match.url_name in 'ventes mes_ventes ventes_vendeuse' %}aria-current="page"{% endif %}>Ventes</a>
       {% if user.is_admin %}
       <a href="{% url 'marge' %}" {% if request.resolver_match.url_name == 'marge' %}aria-current="page"{% endif %}>Marge</a>
       <a href="{% url 'admin:index' %}">Administration</a>
@@ -23,7 +30,7 @@
     </nav>
   </header>
   {% endif %}
-  <main>
+  <main{% block main_class %}{% endblock %}>
     {% for message in messages %}
     <div class="msg msg-{{ message.tags }}" role="status">{{ message }}</div>
     {% endfor %}

@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db.models import F
 
-from .models import Ajustement, Reference, Vente
+from .models import REMISES, Ajustement, Reference, Vente, prix_remise
 
 
 class StockInsuffisant(Exception):
@@ -9,7 +9,9 @@ class StockInsuffisant(Exception):
 
 
 @transaction.atomic
-def enregistrer_vente(reference_id, quantite, vendeur, canal=Vente.Canal.MAGASIN):
+def enregistrer_vente(reference_id, quantite, vendeur, canal=Vente.Canal.MAGASIN, remise_pct=0):
+    if remise_pct != 0 and remise_pct not in REMISES:
+        raise ValueError(f"Solde non autorisé : {remise_pct} %")
     ref = Reference.objects.select_for_update().get(pk=reference_id)
     if quantite > ref.quantite:
         raise StockInsuffisant(f"Stock insuffisant : {ref.quantite} en stock.")
@@ -17,7 +19,9 @@ def enregistrer_vente(reference_id, quantite, vendeur, canal=Vente.Canal.MAGASIN
     return Vente.objects.create(
         reference=ref,
         quantite=quantite,
-        prix_unitaire=ref.prix_vente,
+        prix_catalogue=ref.prix_vente,
+        remise_pct=remise_pct,
+        prix_unitaire=prix_remise(ref.prix_vente, remise_pct),
         cout_unitaire=ref.cout_achat,
         canal=canal,
         vendeur=vendeur,

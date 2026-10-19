@@ -19,6 +19,8 @@ ajustements de stock et synthèse mensuelle de la marge. Utilisable sur ordinate
 - **Vente** : bouton « Vendre » sur la liste du stock. La vente décrémente le stock et
   fige le prix de vente et le coût d'achat du moment, pour que la marge passée ne change
   pas si les prix évoluent.
+- **Solde** : au moment de la vente, le vendeur peut appliquer −10, −20, −30, −40, −50
+  ou −70 % au prix de vente (arrondi au centime). La marge est calculée sur le prix encaissé.
 - **Ajustement** : réception, casse, inventaire… Tracé avec un motif, mais n'entre pas
   dans la marge. Le stock ne peut jamais devenir négatif.
 - **Marge** = (prix de vente − coût d'achat) × quantité, sur les ventes du mois.

@@ -26,7 +26,7 @@
   <tbody>
   {% for ref in references %}
     <tr>
-      <td data-label="Désignation"><strong>{{ ref.designation }}</strong></td>
+      <td data-label="Désignation"><span class="designation">{{ ref.designation }}</span></td>
       {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
       <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
       {% if user.is_admin %}<td class="num" data-label="Marge unit.">{{ ref.marge_unitaire|floatformat:"2g" }} €</td>{% endif %}
@@ -35,6 +35,10 @@
         <form method="post" action="{% url 'vendre' ref.pk %}" class="sell">{% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
           <input type="number" name="quantite" value="1" min="1" max="{{ ref.quantite }}" aria-label="Quantité vendue" {% if ref.quantite == 0 %}disabled{% endif %}>
+          <select name="remise_pct" aria-label="Solde" {% if ref.quantite == 0 %}disabled{% endif %}>
+            <option value="0" selected>Prix normal</option>
+            {% for pct, prix in ref.prix_soldes %}<option value="{{ pct }}">−{{ pct }} % · {{ prix|floatformat:"2g" }} €</option>{% endfor %}
+          </select>
           <button class="primary" {% if ref.quantite == 0 %}disabled{% endif %}>Vendre</button>
         </form>
       </td>

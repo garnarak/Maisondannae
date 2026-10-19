@@ -5,18 +5,19 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from django.utils import formats, timezone
 from django.views.decorators.http import require_POST
 
 from . import services
 from .forms import AjustementForm, ReferenceEditForm, ReferenceForm, VenteForm
-from .models import Reference, Vente
+from .models import Reference, User, Vente
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
+REMISE = ExpressionWrapper((F("prix_catalogue") - F("prix_unitaire")) * F("quantite"), output_field=MONEY)
 COUT = ExpressionWrapper(F("cout_unitaire") * F("quantite"), output_field=MONEY)
 
 
@@ -47,13 +48,17 @@ def vendre(request, pk):
     form = VenteForm(request.POST)
     if form.is_valid():
         try:
-            vente = services.enregistrer_vente(ref.pk, form.cleaned_data["quantite"], request.user)
+            vente = services.enregistrer_vente(
+                ref.pk, form.cleaned_data["quantite"], request.user, remise_pct=form.cleaned_data["remise_pct"]
+            )
         except services.StockInsuffisant as e:
             messages.error(request, f"{ref} : {e}")
         else:
-            messages.success(request, f"Vente enregistrée : {vente.quantite} × {ref}.")
+            prix = formats.number_format(vente.prix_unitaire, 2, use_l10n=True)
+            solde = f" soldé −{vente.remise_pct} % à {prix} € pièce" if vente.remise_pct else ""
+            messages.success(request, f"Vente enregistrée : {vente.quantite} × {ref}{solde}.")
     else:
-        messages.error(request, "Quantité invalide.")
+        messages.error(request, "Quantité ou solde invalide.")
     return redirect(request.POST.get("next") or "stock_list")
 
 
@@ -104,13 +109,70 @@ def reference_edit(request, pk):
     return render(request, "stock/reference_form.html", {"form": form, "titre": f"Modifier « {ref} »", "ref": ref})
 
 
+def _totaux(qs):
+    t = qs.aggregate(ca=Sum(CA), cout=Sum(COUT), remises=Sum(REMISE), pieces=Sum("quantite"), nb=Count("id"))
+    ca = t["ca"] or Decimal(0)
+    return {
+        "ca": ca,
+        "pieces": t["pieces"] or 0,
+        "nb": t["nb"],
+        "remises": t["remises"] or Decimal(0),
+        "marge": ca - (t["cout"] or Decimal(0)),
+    }
+
+
 @login_required
-def ventes(request):
+def ventes(request, mes_ventes=False, vendeuse=None):
+    today = timezone.localdate()
+    debut_mois = today.replace(day=1)
     qs = Vente.objects.select_related("reference", "vendeur")
-    if not request.user.is_admin:
-        # Les utilisateurs restreints ne voient que les ventes du jour.
-        qs = qs.filter(date__date=timezone.localdate())
-    return render(request, "stock/ventes.html", {"ventes": qs[:200]})
+    if mes_ventes:
+        qs = qs.filter(vendeur=request.user)
+    elif vendeuse is not None:
+        qs = qs.filter(vendeur=vendeuse)
+    ventes_jour = qs.filter(date__date=today)
+    ventes_mois = qs.filter(date__date__gte=debut_mois, date__date__lte=today)
+
+    # Historique du mois (hors aujourd'hui), regroupé par jour avec un total par jour.
+    jours = []
+    for v in ventes_mois.filter(date__date__lt=today):
+        jour = timezone.localtime(v.date).date()
+        if not jours or jours[-1]["date"] != jour:
+            jours.append({"date": jour, "ventes": [], "ca": Decimal(0), "pieces": 0})
+        jours[-1]["ventes"].append(v)
+        jours[-1]["ca"] += v.chiffre_affaires
+        jours[-1]["pieces"] += v.quantite
+
+    return render(
+        request,
+        "stock/ventes.html",
+        {
+            "ventes_jour": ventes_jour,
+            "jour": _totaux(ventes_jour),
+            "mois": _totaux(ventes_mois),
+            "debut_mois": debut_mois,
+            "jours": jours,
+            "mes_ventes": mes_ventes,
+            "vendeuse": vendeuse,
+            # Boutons par vendeuse, réservés à l'administrateur.
+            "vendeuses": (
+                User.objects.filter(role=User.Role.RESTREINT, is_active=True).order_by("first_name", "username")
+                if request.user.is_admin
+                else []
+            ),
+        },
+    )
+
+
+@login_required
+def mes_ventes(request):
+    return ventes(request, mes_ventes=True)
+
+
+@admin_required
+def ventes_vendeuse(request, pk):
+    vendeuse = get_object_or_404(User, pk=pk)
+    return ventes(request, vendeuse=vendeuse)
 
 
 @admin_required
@@ -146,7 +208,10 @@ def marge(request):
     end = datetime.datetime.combine(fin, datetime.time.min, tzinfo=tz)
     ventes_mois = Vente.objects.filter(date__gte=start, date__lt=end)
 
-    totaux = ventes_mois.aggregate(ca=Sum(CA), cout=Sum(COUT), pieces=Sum("quantite"))
+    totaux = ventes_mois.aggregate(
+        ca=Sum(CA), cout=Sum(COUT), remises=Sum(REMISE), pieces=Sum("quantite"),
+        pieces_soldees=Sum("quantite", filter=Q(remise_pct__gt=0)),
+    )
     ca = totaux["ca"] or Decimal(0)
     cout = totaux["cout"] or Decimal(0)
 
@@ -184,6 +249,8 @@ def marge(request):
             "marge": ca - cout,
             "taux": _taux(ca - cout, ca),
             "pieces": totaux["pieces"] or 0,
+            "remises": totaux["remises"] or Decimal(0),
+            "pieces_soldees": totaux["pieces_soldees"] or 0,
             "par_reference": par_reference,
             "historique": historique,
             "precedent": precedent.strftime("%Y-%m"),

@@ -26,8 +26,10 @@ class ReferenceAdmin(admin.ModelAdmin):
 
 @admin.register(Vente)
 class VenteAdmin(admin.ModelAdmin):
-    list_display = ["date", "reference", "quantite", "prix_unitaire", "cout_unitaire", "canal", "vendeur"]
-    list_filter = ["canal", "date"]
+    list_display = [
+        "date", "reference", "quantite", "prix_catalogue", "remise_pct", "prix_unitaire", "cout_unitaire", "canal", "vendeur"
+    ]
+    list_filter = ["canal", "remise_pct", "date"]
     date_hierarchy = "date"
 
     def has_add_permission(self, request):

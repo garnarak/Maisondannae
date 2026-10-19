@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Ajustement, Reference
+from .models import REMISES, Ajustement, Reference
 
 
 class ReferenceForm(forms.ModelForm):
@@ -19,6 +19,14 @@ class ReferenceEditForm(forms.ModelForm):
 
 class VenteForm(forms.Form):
     quantite = forms.IntegerField(min_value=1, initial=1, label="Quantité")
+    remise_pct = forms.TypedChoiceField(
+        label="Solde",
+        choices=[(0, "Prix normal")] + [(p, f"−{p} %") for p in REMISES],
+        coerce=int,
+        initial=0,
+        required=False,
+        empty_value=0,
+    )
 
 
 class AjustementForm(forms.Form):

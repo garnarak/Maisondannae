@@ -8,7 +8,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Version affichée dans l'application. À mettre à jour à chaque version publiée (voir CHANGELOG.md).
-APP_VERSION = "0.1.1-beta"
+APP_VERSION = "0.2.0-beta"
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key" if DEBUG else None)
