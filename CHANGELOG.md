@@ -21,7 +21,9 @@ Le suffixe `-beta` indique une version de test.
 - Page Ventes : chiffre d'affaires, pièces vendues et nombre de ventes de la journée
   (et marge du jour pour l'administrateur)
 - Page Ventes : totaux du mois en cours et historique des ventes du mois, regroupé
-  par jour avec le total de chaque journée, visibles aussi par les vendeurs
+  par jour avec le total de chaque journée
+- Chaque vendeur ne voit que ses propres ventes et ses propres chiffres ;
+  l'administrateur voit l'ensemble de la boutique
 
 ## 0.1.1-beta — 17/10/2026
 
