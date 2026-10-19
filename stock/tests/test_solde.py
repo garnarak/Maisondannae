@@ -89,19 +89,66 @@ class ChiffreAffairesDuJourTests(TestCase):
         )
         self.client.force_login(self.vendeuse)
         r = self.client.get(reverse("ventes"))
-        self.assertEqual(r.context["jour_ca"], Decimal("215.97"))
-        self.assertEqual(r.context["jour_pieces"], 3)
-        self.assertEqual(r.context["jour_nb"], 2)
+        self.assertEqual(r.context["jour"]["ca"], Decimal("215.97"))
+        self.assertEqual(r.context["jour"]["pieces"], 3)
+        self.assertEqual(r.context["jour"]["nb"], 2)
         self.assertContains(r, "215,97 €")
         self.assertNotContains(r, "Marge du jour")
 
         self.client.force_login(self.admin)
         r = self.client.get(reverse("ventes"))
         self.assertContains(r, "Marge du jour")
-        self.assertEqual(r.context["jour_marge"], Decimal("125.97"))
+        self.assertEqual(r.context["jour"]["marge"], Decimal("125.97"))
 
     def test_journee_sans_vente(self):
         self.client.force_login(self.vendeuse)
         r = self.client.get(reverse("ventes"))
-        self.assertEqual(r.context["jour_ca"], Decimal("0"))
+        self.assertEqual(r.context["jour"]["ca"], Decimal("0"))
         self.assertContains(r, "0,00 €")
+
+
+class HistoriqueDuMoisTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.vendeuse = User.objects.create_user("lea", password="x")
+        cls.robe = Reference.objects.create(
+            designation="Robe lin", cout_achat=Decimal("30.00"), prix_vente=Decimal("50.00"), quantite=10
+        )
+
+    def _vente_le(self, jour, quantite=1):
+        import datetime
+
+        from django.utils import timezone
+
+        moment = timezone.make_aware(datetime.datetime.combine(jour, datetime.time(15, 0)))
+        return Vente.objects.create(
+            reference=self.robe, quantite=quantite, prix_unitaire=Decimal("50.00"),
+            cout_unitaire=Decimal("30.00"), date=moment, vendeur=self.vendeuse,
+        )
+
+    def test_la_vendeuse_voit_le_mois_en_cours(self):
+        import datetime
+
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        debut = today.replace(day=1)
+        services.enregistrer_vente(self.robe.pk, 1, self.vendeuse)  # aujourd'hui
+        if today.day > 1:
+            self._vente_le(debut, quantite=2)  # plus tôt ce mois-ci
+        self._vente_le(debut - datetime.timedelta(days=1))  # mois précédent : exclu
+
+        self.client.force_login(self.vendeuse)
+        r = self.client.get(reverse("ventes"))
+        attendu = 3 if today.day > 1 else 1
+        self.assertEqual(r.context["mois"]["pieces"], attendu)
+        self.assertEqual(r.context["mois"]["ca"], Decimal("50.00") * attendu)
+        self.assertContains(r, "Chiffre d'affaires du mois")
+        self.assertNotContains(r, "Marge du mois")
+        jours = r.context["jours"]
+        if today.day > 1:
+            # Aujourd'hui n'est pas répété dans l'historique.
+            self.assertEqual([j["date"] for j in jours], [debut])
+            self.assertEqual(jours[0]["ca"], Decimal("100.00"))
+        else:
+            self.assertEqual(jours, [])

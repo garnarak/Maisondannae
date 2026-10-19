@@ -20,6 +20,8 @@ Le suffixe `-beta` indique une version de test.
 - Tablette paysage : la liste du stock s'affiche en cartes sur deux colonnes
 - Page Ventes : chiffre d'affaires, pièces vendues et nombre de ventes de la journée
   (et marge du jour pour l'administrateur)
+- Page Ventes : totaux du mois en cours et historique des ventes du mois, regroupé
+  par jour avec le total de chaque journée, visibles aussi par les vendeurs
 
 ## 0.1.1-beta — 17/10/2026
 

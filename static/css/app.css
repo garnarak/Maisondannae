@@ -151,3 +151,13 @@ main.full { padding: 0; max-width: none; }
   .kpi { padding: 14px 16px; }
   .kpi strong { font-size: 1.6rem; }
 }
+
+/* Historique du mois : une ligne d'en-tête par jour, avec son total. */
+h2.section { margin-top: 2.4em; padding-top: 1.2em; border-top: 1px solid var(--border); }
+tr.jour th { background: var(--gold-soft); color: var(--text); text-transform: none; letter-spacing: 0; font-size: .95rem; padding: 10px 16px; }
+.jour-ligne { display: flex; justify-content: space-between; gap: 12px; }
+.jour-total { font-variant-numeric: tabular-nums; font-weight: 600; }
+@media (max-width: 760px) {
+  .table-wrap tr.jour { background: none; border: 0; padding: 0; margin: 18px 0 8px; }
+  .table-wrap tr.jour th { display: block; border-radius: var(--radius); }
+}

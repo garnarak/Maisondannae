@@ -109,27 +109,45 @@ def reference_edit(request, pk):
     return render(request, "stock/reference_form.html", {"form": form, "titre": f"Modifier « {ref} »", "ref": ref})
 
 
+def _totaux(qs):
+    t = qs.aggregate(ca=Sum(CA), cout=Sum(COUT), remises=Sum(REMISE), pieces=Sum("quantite"), nb=Count("id"))
+    ca = t["ca"] or Decimal(0)
+    return {
+        "ca": ca,
+        "pieces": t["pieces"] or 0,
+        "nb": t["nb"],
+        "remises": t["remises"] or Decimal(0),
+        "marge": ca - (t["cout"] or Decimal(0)),
+    }
+
+
 @login_required
 def ventes(request):
-    aujourd_hui = Vente.objects.filter(date__date=timezone.localdate())
-    jour = aujourd_hui.aggregate(
-        ca=Sum(CA), cout=Sum(COUT), remises=Sum(REMISE), pieces=Sum("quantite"), nb=Count("id")
-    )
-    ca = jour["ca"] or Decimal(0)
+    today = timezone.localdate()
+    debut_mois = today.replace(day=1)
     qs = Vente.objects.select_related("reference", "vendeur")
-    if not request.user.is_admin:
-        # Les utilisateurs restreints ne voient que les ventes du jour.
-        qs = qs.filter(date__date=timezone.localdate())
+    ventes_jour = qs.filter(date__date=today)
+    ventes_mois = qs.filter(date__date__gte=debut_mois, date__date__lte=today)
+
+    # Historique du mois (hors aujourd'hui), regroupé par jour avec un total par jour.
+    jours = []
+    for v in ventes_mois.filter(date__date__lt=today):
+        jour = timezone.localtime(v.date).date()
+        if not jours or jours[-1]["date"] != jour:
+            jours.append({"date": jour, "ventes": [], "ca": Decimal(0), "pieces": 0})
+        jours[-1]["ventes"].append(v)
+        jours[-1]["ca"] += v.chiffre_affaires
+        jours[-1]["pieces"] += v.quantite
+
     return render(
         request,
         "stock/ventes.html",
         {
-            "ventes": qs[:200],
-            "jour_ca": ca,
-            "jour_pieces": jour["pieces"] or 0,
-            "jour_nb": jour["nb"],
-            "jour_remises": jour["remises"] or Decimal(0),
-            "jour_marge": ca - (jour["cout"] or Decimal(0)),
+            "ventes_jour": ventes_jour,
+            "jour": _totaux(ventes_jour),
+            "mois": _totaux(ventes_mois),
+            "debut_mois": debut_mois,
+            "jours": jours,
         },
     )
 
