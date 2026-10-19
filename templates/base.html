@@ -19,8 +19,7 @@
     </a>
     <nav>
       <a href="{% url 'stock_list' %}" {% if request.resolver_match.url_name == 'stock_list' %}aria-current="page"{% endif %}>Stock</a>
-      <a href="{% url 'ventes' %}" {% if request.resolver_match.url_name == 'ventes' %}aria-current="page"{% endif %}>Ventes</a>
-      <a href="{% url 'mes_ventes' %}" {% if request.resolver_match.url_name == 'mes_ventes' %}aria-current="page"{% endif %}>Mes ventes</a>
+      <a href="{% url 'ventes' %}" {% if request.resolver_match.url_name == 'ventes' or request.resolver_match.url_name == 'mes_ventes' %}aria-current="page"{% endif %}>Ventes</a>
       {% if user.is_admin %}
       <a href="{% url 'marge' %}" {% if request.resolver_match.url_name == 'marge' %}aria-current="page"{% endif %}>Marge</a>
       <a href="{% url 'admin:index' %}">Administration</a>

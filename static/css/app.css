@@ -161,3 +161,6 @@ tr.jour th { background: var(--gold-soft); color: var(--text); text-transform: n
   .table-wrap tr.jour { background: none; border: 0; padding: 0; margin: 18px 0 8px; }
   .table-wrap tr.jour th { display: block; border-radius: var(--radius); }
 }
+
+/* Page Ventes : bascule « Toutes les ventes » / « Mes ventes ». */
+.bascule { display: flex; gap: 8px; }

@@ -184,4 +184,5 @@ class MesVentesTests(TestCase):
         self.assertEqual(r.context["mois"]["ca"], Decimal("50.00"))
         self.assertContains(r, "Robe lin")
         self.assertNotContains(r, "Pull angora")
-        self.assertContains(r, 'aria-current="page">Mes ventes')
+        self.assertContains(r, 'aria-current="page">Mes ventes</a>')
+        self.assertContains(r, 'aria-current="page">Ventes</a>')  # le menu Ventes reste actif

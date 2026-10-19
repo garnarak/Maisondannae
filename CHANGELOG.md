@@ -22,8 +22,8 @@ Le suffixe `-beta` indique une version de test.
   (et marge du jour pour l'administrateur)
 - Page Ventes : totaux du mois en cours et historique des ventes du mois, regroupé
   par jour avec le total de chaque journée, visibles aussi par les vendeurs
-- Nouvelle page « Mes ventes » : les mêmes chiffres et historiques, limités aux ventes
-  enregistrées avec son propre compte ; la page Ventes montre toute la boutique
+- Bouton « Mes ventes » dans la page Ventes : les mêmes chiffres et historiques, limités
+  aux ventes enregistrées avec son propre compte ; par défaut, la page montre toute la boutique
 
 ## 0.1.1-beta — 17/10/2026
 
