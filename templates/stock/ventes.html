@@ -1,14 +1,18 @@
 {% extends "base.html" %}
-{% block title %}{% if mes_ventes %}Mes ventes{% else %}Ventes{% endif %}{% endblock %}
+{% block title %}{% if mes_ventes %}Mes ventes{% elif vendeuse %}Ventes de {{ vendeuse.get_short_name|default:vendeuse.username }}{% else %}Ventes{% endif %}{% endblock %}
 {% block content %}
 <div class="toolbar">
-  <h1>{% if mes_ventes %}Mes ventes{% else %}Ventes{% endif %}</h1>
+  <h1>{% if mes_ventes %}Mes ventes{% elif vendeuse %}Ventes de {{ vendeuse.get_short_name|default:vendeuse.username }}{% else %}Ventes{% endif %}</h1>
   <nav class="bascule" aria-label="Choix des ventes affichées">
-    <a class="button{% if not mes_ventes %} primary{% endif %}" href="{% url 'ventes' %}" {% if not mes_ventes %}aria-current="page"{% endif %}>Toutes les ventes</a>
+    <a class="button{% if not mes_ventes and not vendeuse %} primary{% endif %}" href="{% url 'ventes' %}" {% if not mes_ventes and not vendeuse %}aria-current="page"{% endif %}>Toutes les ventes</a>
     <a class="button{% if mes_ventes %} primary{% endif %}" href="{% url 'mes_ventes' %}" {% if mes_ventes %}aria-current="page"{% endif %}>Mes ventes</a>
+    {% for v in vendeuses %}
+    <a class="button{% if vendeuse.pk == v.pk %} primary{% endif %}" href="{% url 'ventes_vendeuse' v.pk %}" {% if vendeuse.pk == v.pk %}aria-current="page"{% endif %}>{{ v.get_short_name|default:v.username }}</a>
+    {% endfor %}
   </nav>
 </div>
 {% if mes_ventes %}<p class="muted">Seules les ventes enregistrées avec votre compte apparaissent ici.</p>{% endif %}
+{% if vendeuse %}<p class="muted">Seules les ventes enregistrées avec le compte de {{ vendeuse.get_short_name|default:vendeuse.username }} apparaissent ici.</p>{% endif %}
 
 <h2>Aujourd'hui · {% now "l j F" %}</h2>
 <div class="kpis">

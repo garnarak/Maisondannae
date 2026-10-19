@@ -186,3 +186,45 @@ class MesVentesTests(TestCase):
         self.assertNotContains(r, "Pull angora")
         self.assertContains(r, 'aria-current="page">Mes ventes</a>')
         self.assertContains(r, 'aria-current="page">Ventes</a>')  # le menu Ventes reste actif
+
+
+class VentesParVendeuseTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
+        cls.lea = User.objects.create_user("lea", password="x", first_name="Léa")
+        cls.sarah = User.objects.create_user("sarah", password="x")
+        cls.ancienne = User.objects.create_user("ancienne", password="x", is_active=False)
+        cls.robe = Reference.objects.create(
+            designation="Robe lin", cout_achat=Decimal("30.00"), prix_vente=Decimal("50.00"), quantite=10
+        )
+        cls.pull = Reference.objects.create(
+            designation="Pull angora", cout_achat=Decimal("20.00"), prix_vente=Decimal("80.00"), quantite=10
+        )
+
+    def setUp(self):
+        services.enregistrer_vente(self.robe.pk, 1, self.lea)
+        services.enregistrer_vente(self.pull.pk, 2, self.sarah)
+
+    def test_l_administrateur_a_un_bouton_par_vendeuse_active(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("ventes"))
+        self.assertEqual(list(r.context["vendeuses"]), [self.sarah, self.lea])
+        self.assertContains(r, reverse("ventes_vendeuse", args=[self.lea.pk]))
+        self.assertNotContains(r, reverse("ventes_vendeuse", args=[self.ancienne.pk]))
+
+    def test_ventes_d_une_vendeuse(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("ventes_vendeuse", args=[self.lea.pk]))
+        self.assertEqual(r.context["jour"]["ca"], Decimal("50.00"))
+        self.assertEqual(r.context["mois"]["ca"], Decimal("50.00"))
+        self.assertContains(r, "Ventes de Léa")
+        self.assertContains(r, "Robe lin")
+        self.assertNotContains(r, "Pull angora")
+
+    def test_une_vendeuse_n_a_ni_les_boutons_ni_l_acces(self):
+        self.client.force_login(self.lea)
+        r = self.client.get(reverse("ventes"))
+        self.assertEqual(list(r.context["vendeuses"]), [])
+        self.assertNotContains(r, reverse("ventes_vendeuse", args=[self.sarah.pk]))
+        self.assertEqual(self.client.get(reverse("ventes_vendeuse", args=[self.sarah.pk])).status_code, 403)

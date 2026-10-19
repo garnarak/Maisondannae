@@ -163,4 +163,4 @@ tr.jour th { background: var(--gold-soft); color: var(--text); text-transform: n
 }
 
 /* Page Ventes : bascule « Toutes les ventes » / « Mes ventes ». */
-.bascule { display: flex; gap: 8px; }
+.bascule { display: flex; flex-wrap: wrap; gap: 8px; }

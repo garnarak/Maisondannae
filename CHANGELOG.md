@@ -24,6 +24,8 @@ Le suffixe `-beta` indique une version de test.
   par jour avec le total de chaque journée, visibles aussi par les vendeurs
 - Bouton « Mes ventes » dans la page Ventes : les mêmes chiffres et historiques, limités
   aux ventes enregistrées avec son propre compte ; par défaut, la page montre toute la boutique
+- Administrateur : un bouton par vendeuse dans la page Ventes, pour voir ses chiffres
+  et son historique du jour et du mois
 
 ## 0.1.1-beta — 17/10/2026
 

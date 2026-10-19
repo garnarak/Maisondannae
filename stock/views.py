@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from . import services
 from .forms import AjustementForm, ReferenceEditForm, ReferenceForm, VenteForm
-from .models import Reference, Vente
+from .models import Reference, User, Vente
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
@@ -122,12 +122,14 @@ def _totaux(qs):
 
 
 @login_required
-def ventes(request, mes_ventes=False):
+def ventes(request, mes_ventes=False, vendeuse=None):
     today = timezone.localdate()
     debut_mois = today.replace(day=1)
     qs = Vente.objects.select_related("reference", "vendeur")
     if mes_ventes:
         qs = qs.filter(vendeur=request.user)
+    elif vendeuse is not None:
+        qs = qs.filter(vendeur=vendeuse)
     ventes_jour = qs.filter(date__date=today)
     ventes_mois = qs.filter(date__date__gte=debut_mois, date__date__lte=today)
 
@@ -151,6 +153,13 @@ def ventes(request, mes_ventes=False):
             "debut_mois": debut_mois,
             "jours": jours,
             "mes_ventes": mes_ventes,
+            "vendeuse": vendeuse,
+            # Boutons par vendeuse, réservés à l'administrateur.
+            "vendeuses": (
+                User.objects.filter(role=User.Role.RESTREINT, is_active=True).order_by("first_name", "username")
+                if request.user.is_admin
+                else []
+            ),
         },
     )
 
@@ -158,6 +167,12 @@ def ventes(request, mes_ventes=False):
 @login_required
 def mes_ventes(request):
     return ventes(request, mes_ventes=True)
+
+
+@admin_required
+def ventes_vendeuse(request, pk):
+    vendeuse = get_object_or_404(User, pk=pk)
+    return ventes(request, vendeuse=vendeuse)
 
 
 @admin_required
