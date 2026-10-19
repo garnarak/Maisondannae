@@ -122,10 +122,12 @@ def _totaux(qs):
 
 
 @login_required
-def ventes(request):
+def ventes(request, mes_ventes=False):
     today = timezone.localdate()
     debut_mois = today.replace(day=1)
     qs = Vente.objects.select_related("reference", "vendeur")
+    if mes_ventes:
+        qs = qs.filter(vendeur=request.user)
     ventes_jour = qs.filter(date__date=today)
     ventes_mois = qs.filter(date__date__gte=debut_mois, date__date__lte=today)
 
@@ -148,8 +150,14 @@ def ventes(request):
             "mois": _totaux(ventes_mois),
             "debut_mois": debut_mois,
             "jours": jours,
+            "mes_ventes": mes_ventes,
         },
     )
+
+
+@login_required
+def mes_ventes(request):
+    return ventes(request, mes_ventes=True)
 
 
 @admin_required

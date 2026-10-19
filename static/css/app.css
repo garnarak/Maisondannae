@@ -126,7 +126,7 @@ main.full { padding: 0; max-width: none; }
   main { padding: 24px 16px; }
   h1 { font-size: 2.2rem; }
   .topbar { padding: 10px 16px 0; }
-  .topbar nav { flex-wrap: nowrap; overflow-x: auto; gap: 20px; width: 100%; }
+  .topbar nav { flex-wrap: wrap; gap: 0 18px; width: 100%; }
   .topbar nav a, .topbar nav button.link { white-space: nowrap; }
   .grid2 { grid-template-columns: 1fr; }
   .table-wrap { background: none; border: 0; overflow: visible; }

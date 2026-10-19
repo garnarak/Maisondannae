@@ -152,3 +152,36 @@ class HistoriqueDuMoisTests(TestCase):
             self.assertEqual(jours[0]["ca"], Decimal("100.00"))
         else:
             self.assertEqual(jours, [])
+
+
+class MesVentesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.lea = User.objects.create_user("lea", password="x")
+        cls.sarah = User.objects.create_user("sarah", password="x")
+        cls.robe = Reference.objects.create(
+            designation="Robe lin", cout_achat=Decimal("30.00"), prix_vente=Decimal("50.00"), quantite=10
+        )
+        cls.pull = Reference.objects.create(
+            designation="Pull angora", cout_achat=Decimal("20.00"), prix_vente=Decimal("80.00"), quantite=10
+        )
+
+    def setUp(self):
+        services.enregistrer_vente(self.robe.pk, 1, self.lea)
+        services.enregistrer_vente(self.pull.pk, 2, self.sarah)
+        self.client.force_login(self.lea)
+
+    def test_ventes_montre_toute_la_boutique(self):
+        r = self.client.get(reverse("ventes"))
+        self.assertEqual(r.context["jour"]["ca"], Decimal("210.00"))
+        self.assertEqual(r.context["mois"]["ca"], Decimal("210.00"))
+        self.assertContains(r, "Robe lin")
+        self.assertContains(r, "Pull angora")
+
+    def test_mes_ventes_ne_montre_que_les_siennes(self):
+        r = self.client.get(reverse("mes_ventes"))
+        self.assertEqual(r.context["jour"]["ca"], Decimal("50.00"))
+        self.assertEqual(r.context["mois"]["ca"], Decimal("50.00"))
+        self.assertContains(r, "Robe lin")
+        self.assertNotContains(r, "Pull angora")
+        self.assertContains(r, 'aria-current="page">Mes ventes')
