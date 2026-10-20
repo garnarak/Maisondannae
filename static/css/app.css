@@ -164,3 +164,13 @@ tr.jour th { background: var(--gold-soft); color: var(--text); text-transform: n
 
 /* Page Ventes : bascule « Toutes les ventes » / « Mes ventes ». */
 .bascule { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Ventes en ligne : bouton secondaire à côté de « Vendre » et étiquette dans les listes. */
+button.en-ligne { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+.badge.canal { background: var(--accent); color: var(--accent-text); font-size: .75rem; }
+.repartition { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0 0; font-size: .85rem; }
+.repartition dt { color: var(--accent-soft); }
+.repartition dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Montants des indicateurs : jamais coupés, taille adaptée à la largeur. */
+.kpi strong { white-space: nowrap; font-size: clamp(1.4rem, 2.5vw, 2.1rem); }

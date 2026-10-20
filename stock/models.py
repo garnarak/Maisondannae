@@ -66,7 +66,7 @@ class Reference(models.Model):
 
 class Vente(models.Model):
     class Canal(models.TextChoices):
-        MAGASIN = "magasin", "Magasin"
+        MAGASIN = "magasin", "Boutique"
         EN_LIGNE = "en_ligne", "En ligne"
 
     reference = models.ForeignKey(Reference, on_delete=models.PROTECT, related_name="ventes")

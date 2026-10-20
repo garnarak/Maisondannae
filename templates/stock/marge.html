@@ -18,6 +18,24 @@
   <div class="kpi"><span>Soldes accordés ({{ pieces_soldees }} pièce{{ pieces_soldees|pluralize }})</span><strong>{{ remises|floatformat:"2g" }} €</strong></div>
 </div>
 
+<h2>Boutique et ventes en ligne</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Canal</th><th class="num">Pièces</th><th class="num">CA</th><th class="num">Marge</th><th class="num">Taux</th></tr></thead>
+  <tbody>
+  {% for c in par_canal %}
+    <tr>
+      <td data-label="Canal">{{ c.libelle }}</td>
+      <td class="num" data-label="Pièces">{{ c.pieces }}</td>
+      <td class="num" data-label="CA">{{ c.ca|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Marge">{{ c.marge|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Taux">{% if c.taux is not None %}{{ c.taux|floatformat:1 }} %{% else %}—{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
 <h2>Articles les plus rentables du mois</h2>
 <div class="table-wrap">
 <table>

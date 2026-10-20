@@ -1,6 +1,6 @@
 <tr>
   <td data-label="{% if avec_date %}Date{% else %}Heure{% endif %}">{% if avec_date %}{{ v.date|date:"d/m/Y H:i" }}{% else %}{{ v.date|date:"H:i" }}{% endif %}</td>
-  <td data-label="Référence">{{ v.reference }}</td>
+  <td data-label="Référence">{{ v.reference }}{% if v.canal == "en_ligne" %} <span class="badge canal">En ligne</span>{% endif %}</td>
   <td class="num" data-label="Qté">{{ v.quantite }}</td>
   <td class="num" data-label="Prix unit.">
     {% if v.remise_pct %}<s class="muted">{{ v.prix_catalogue|floatformat:"2g" }} €</s> <span class="badge">−{{ v.remise_pct }} %</span><br>{% endif %}

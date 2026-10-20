@@ -49,14 +49,19 @@ def vendre(request, pk):
     if form.is_valid():
         try:
             vente = services.enregistrer_vente(
-                ref.pk, form.cleaned_data["quantite"], request.user, remise_pct=form.cleaned_data["remise_pct"]
+                ref.pk,
+                form.cleaned_data["quantite"],
+                request.user,
+                canal=form.cleaned_data["canal"],
+                remise_pct=form.cleaned_data["remise_pct"],
             )
         except services.StockInsuffisant as e:
             messages.error(request, f"{ref} : {e}")
         else:
             prix = formats.number_format(vente.prix_unitaire, 2, use_l10n=True)
             solde = f" soldé −{vente.remise_pct} % à {prix} € pièce" if vente.remise_pct else ""
-            messages.success(request, f"Vente enregistrée : {vente.quantite} × {ref}{solde}.")
+            canal = " en ligne" if vente.canal == Vente.Canal.EN_LIGNE else " en boutique"
+            messages.success(request, f"Vente{canal} enregistrée : {vente.quantite} × {ref}{solde}.")
     else:
         messages.error(request, "Quantité ou solde invalide.")
     return redirect(request.POST.get("next") or "stock_list")
@@ -118,6 +123,8 @@ def _totaux(qs):
         "nb": t["nb"],
         "remises": t["remises"] or Decimal(0),
         "marge": ca - (t["cout"] or Decimal(0)),
+        "ca_boutique": qs.filter(canal=Vente.Canal.MAGASIN).aggregate(v=Sum(CA))["v"] or Decimal(0),
+        "ca_en_ligne": qs.filter(canal=Vente.Canal.EN_LIGNE).aggregate(v=Sum(CA))["v"] or Decimal(0),
     }
 
 
@@ -224,6 +231,16 @@ def marge(request):
     for r in par_reference:
         r["taux"] = _taux(r["marge"], r["ca"])
 
+    par_canal = []
+    for valeur, libelle in Vente.Canal.choices:
+        t = ventes_mois.filter(canal=valeur).aggregate(ca=Sum(CA), cout=Sum(COUT), pieces=Sum("quantite"))
+        ca_canal = t["ca"] or Decimal(0)
+        marge_canal = ca_canal - (t["cout"] or Decimal(0))
+        par_canal.append(
+            {"libelle": libelle, "pieces": t["pieces"] or 0, "ca": ca_canal, "marge": marge_canal,
+             "taux": _taux(marge_canal, ca_canal)}
+        )
+
     debut_historique = debut.replace(year=debut.year - 1)
     historique = (
         Vente.objects.filter(
@@ -252,6 +269,7 @@ def marge(request):
             "remises": totaux["remises"] or Decimal(0),
             "pieces_soldees": totaux["pieces_soldees"] or 0,
             "par_reference": par_reference,
+            "par_canal": par_canal,
             "historique": historique,
             "precedent": precedent.strftime("%Y-%m"),
             "suivant": fin.strftime("%Y-%m") if fin <= timezone.localdate() else None,
