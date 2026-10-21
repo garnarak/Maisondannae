@@ -12,6 +12,10 @@ Le suffixe `-beta` indique une version de test.
 - Ventes en ligne : bouton « En ligne » à côté de « Vendre » sur la liste du stock,
   accessible à tous ; « Vendre » enregistre une vente en boutique
 - Étiquette « En ligne » sur les ventes concernées dans les listes
+- Les ventes en ligne ne sont attribuées à aucun vendeur : elles ne comptent ni dans
+  « Mes ventes » ni dans les chiffres d'une vendeuse ; la personne qui les a saisies
+  reste visible dans l'administration
+- Page Ventes : bouton « Ventes en ligne » pour suivre les chiffres de ce canal
 - Page Ventes : chiffre d'affaires du jour et du mois réparti entre boutique et en ligne
 - Synthèse de marge : chiffre d'affaires et marge du mois par canal
 

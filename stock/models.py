@@ -89,6 +89,12 @@ class Vente(models.Model):
     vendeur = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="ventes"
     )
+    # Compte qui a saisi la vente, pour la traçabilité. Une vente en ligne n'a pas de
+    # vendeur (elle n'est attribuée à personne) mais garde la trace de qui l'a déclarée.
+    saisie_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="ventes_saisies", verbose_name="saisie par",
+    )
 
     class Meta:
         ordering = ["-date"]

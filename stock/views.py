@@ -129,14 +129,21 @@ def _totaux(qs):
 
 
 @login_required
-def ventes(request, mes_ventes=False, vendeuse=None):
+def ventes(request, mes_ventes=False, vendeuse=None, en_ligne=False):
     today = timezone.localdate()
     debut_mois = today.replace(day=1)
     qs = Vente.objects.select_related("reference", "vendeur")
     if mes_ventes:
         qs = qs.filter(vendeur=request.user)
+        titre = "Mes ventes"
     elif vendeuse is not None:
         qs = qs.filter(vendeur=vendeuse)
+        titre = f"Ventes de {vendeuse.get_short_name() or vendeuse.username}"
+    elif en_ligne:
+        qs = qs.filter(canal=Vente.Canal.EN_LIGNE)
+        titre = "Ventes en ligne"
+    else:
+        titre = "Ventes"
     ventes_jour = qs.filter(date__date=today)
     ventes_mois = qs.filter(date__date__gte=debut_mois, date__date__lte=today)
 
@@ -161,6 +168,9 @@ def ventes(request, mes_ventes=False, vendeuse=None):
             "jours": jours,
             "mes_ventes": mes_ventes,
             "vendeuse": vendeuse,
+            "en_ligne": en_ligne,
+            "toutes": not (mes_ventes or vendeuse or en_ligne),
+            "titre": titre,
             # Boutons par vendeuse, réservés à l'administrateur.
             "vendeuses": (
                 User.objects.filter(role=User.Role.RESTREINT, is_active=True).order_by("first_name", "username")
@@ -174,6 +184,11 @@ def ventes(request, mes_ventes=False, vendeuse=None):
 @login_required
 def mes_ventes(request):
     return ventes(request, mes_ventes=True)
+
+
+@login_required
+def ventes_en_ligne(request):
+    return ventes(request, en_ligne=True)
 
 
 @admin_required
