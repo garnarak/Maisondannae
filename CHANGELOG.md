@@ -7,7 +7,7 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 0.3.0-beta — non publiée
+## 0.3.0-beta — 21/10/2026
 
 - Ventes en ligne : bouton « En ligne » à côté de « Vendre » sur la liste du stock,
   accessible à tous ; « Vendre » enregistre une vente en boutique
