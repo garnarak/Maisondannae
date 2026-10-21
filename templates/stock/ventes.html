@@ -1,22 +1,25 @@
 {% extends "base.html" %}
-{% block title %}{% if mes_ventes %}Mes ventes{% elif vendeuse %}Ventes de {{ vendeuse.get_short_name|default:vendeuse.username }}{% else %}Ventes{% endif %}{% endblock %}
+{% block title %}{{ titre }}{% endblock %}
 {% block content %}
 <div class="toolbar">
-  <h1>{% if mes_ventes %}Mes ventes{% elif vendeuse %}Ventes de {{ vendeuse.get_short_name|default:vendeuse.username }}{% else %}Ventes{% endif %}</h1>
+  <h1>{{ titre }}</h1>
   <nav class="bascule" aria-label="Choix des ventes affichées">
-    <a class="button{% if not mes_ventes and not vendeuse %} primary{% endif %}" href="{% url 'ventes' %}" {% if not mes_ventes and not vendeuse %}aria-current="page"{% endif %}>Toutes les ventes</a>
+    <a class="button{% if toutes %} primary{% endif %}" href="{% url 'ventes' %}" {% if toutes %}aria-current="page"{% endif %}>Toutes les ventes</a>
     <a class="button{% if mes_ventes %} primary{% endif %}" href="{% url 'mes_ventes' %}" {% if mes_ventes %}aria-current="page"{% endif %}>Mes ventes</a>
     {% for v in vendeuses %}
     <a class="button{% if vendeuse.pk == v.pk %} primary{% endif %}" href="{% url 'ventes_vendeuse' v.pk %}" {% if vendeuse.pk == v.pk %}aria-current="page"{% endif %}>{{ v.get_short_name|default:v.username }}</a>
     {% endfor %}
+    <a class="button{% if en_ligne %} primary{% endif %}" href="{% url 'ventes_en_ligne' %}" {% if en_ligne %}aria-current="page"{% endif %}>Ventes en ligne</a>
   </nav>
 </div>
-{% if mes_ventes %}<p class="muted">Seules les ventes enregistrées avec votre compte apparaissent ici.</p>{% endif %}
+{% if mes_ventes %}<p class="muted">Seules les ventes en boutique enregistrées avec votre compte apparaissent ici ; les ventes en ligne ne sont attribuées à personne.</p>{% endif %}
+{% if en_ligne %}<p class="muted">Ventes déclarées avec le bouton « En ligne », quelle que soit la personne qui les a saisies.</p>{% endif %}
 {% if vendeuse %}<p class="muted">Seules les ventes enregistrées avec le compte de {{ vendeuse.get_short_name|default:vendeuse.username }} apparaissent ici.</p>{% endif %}
 
 <h2>Aujourd'hui · {% now "l j F" %}</h2>
 <div class="kpis">
-  <div class="kpi accent"><span>Chiffre d'affaires du jour</span><strong>{{ jour.ca|floatformat:"2g" }} €</strong></div>
+  <div class="kpi accent"><span>Chiffre d'affaires du jour</span><strong>{{ jour.ca|floatformat:"2g" }} €</strong>
+    {% if toutes %}<dl class="repartition"><dt>Boutique</dt><dd>{{ jour.ca_boutique|floatformat:"2g" }} €</dd><dt>En ligne</dt><dd>{{ jour.ca_en_ligne|floatformat:"2g" }} €</dd></dl>{% endif %}</div>
   <div class="kpi"><span>Pièces vendues</span><strong>{{ jour.pieces }}</strong></div>
   <div class="kpi"><span>Nombre de ventes</span><strong>{{ jour.nb }}</strong></div>
   {% if jour.remises %}<div class="kpi"><span>Soldes accordés</span><strong>{{ jour.remises|floatformat:"2g" }} €</strong></div>{% endif %}
@@ -46,7 +49,8 @@
 
 <h2 class="section">Ce mois-ci · {{ debut_mois|date:"F Y" }}</h2>
 <div class="kpis">
-  <div class="kpi accent"><span>Chiffre d'affaires du mois</span><strong>{{ mois.ca|floatformat:"2g" }} €</strong></div>
+  <div class="kpi accent"><span>Chiffre d'affaires du mois</span><strong>{{ mois.ca|floatformat:"2g" }} €</strong>
+    {% if toutes %}<dl class="repartition"><dt>Boutique</dt><dd>{{ mois.ca_boutique|floatformat:"2g" }} €</dd><dt>En ligne</dt><dd>{{ mois.ca_en_ligne|floatformat:"2g" }} €</dd></dl>{% endif %}</div>
   <div class="kpi"><span>Pièces vendues</span><strong>{{ mois.pieces }}</strong></div>
   <div class="kpi"><span>Nombre de ventes</span><strong>{{ mois.nb }}</strong></div>
   {% if mois.remises %}<div class="kpi"><span>Soldes accordés</span><strong>{{ mois.remises|floatformat:"2g" }} €</strong></div>{% endif %}

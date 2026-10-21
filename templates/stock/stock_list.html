@@ -39,7 +39,8 @@
             <option value="0" selected>Prix normal</option>
             {% for pct, prix in ref.prix_soldes %}<option value="{{ pct }}">−{{ pct }} % · {{ prix|floatformat:"2g" }} €</option>{% endfor %}
           </select>
-          <button class="primary" {% if ref.quantite == 0 %}disabled{% endif %}>Vendre</button>
+          <button class="primary" name="canal" value="magasin" title="Vente en boutique" {% if ref.quantite == 0 %}disabled{% endif %}>Vendre</button>
+          <button class="en-ligne" name="canal" value="en_ligne" title="Vente en ligne" {% if ref.quantite == 0 %}disabled{% endif %}>En ligne</button>
         </form>
       </td>
       <td class="actions">

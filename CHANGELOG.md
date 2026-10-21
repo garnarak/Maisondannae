@@ -7,6 +7,18 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 0.3.0-beta — 21/10/2026
+
+- Ventes en ligne : bouton « En ligne » à côté de « Vendre » sur la liste du stock,
+  accessible à tous ; « Vendre » enregistre une vente en boutique
+- Étiquette « En ligne » sur les ventes concernées dans les listes
+- Les ventes en ligne ne sont attribuées à aucun vendeur : elles ne comptent ni dans
+  « Mes ventes » ni dans les chiffres d'une vendeuse ; la personne qui les a saisies
+  reste visible dans l'administration
+- Page Ventes : bouton « Ventes en ligne » pour suivre les chiffres de ce canal
+- Page Ventes : chiffre d'affaires du jour et du mois réparti entre boutique et en ligne
+- Synthèse de marge : chiffre d'affaires et marge du mois par canal
+
 ## 0.2.0-beta — 19/10/2026
 
 - Solde au moment de la vente : le vendeur choisit −10, −20, −30, −40, −50 ou −70 %

@@ -66,7 +66,7 @@ class Reference(models.Model):
 
 class Vente(models.Model):
     class Canal(models.TextChoices):
-        MAGASIN = "magasin", "Magasin"
+        MAGASIN = "magasin", "Boutique"
         EN_LIGNE = "en_ligne", "En ligne"
 
     reference = models.ForeignKey(Reference, on_delete=models.PROTECT, related_name="ventes")
@@ -88,6 +88,12 @@ class Vente(models.Model):
     canal = models.CharField(max_length=20, choices=Canal.choices, default=Canal.MAGASIN)
     vendeur = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="ventes"
+    )
+    # Compte qui a saisi la vente, pour la traçabilité. Une vente en ligne n'a pas de
+    # vendeur (elle n'est attribuée à personne) mais garde la trace de qui l'a déclarée.
+    saisie_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="ventes_saisies", verbose_name="saisie par",
     )
 
     class Meta:

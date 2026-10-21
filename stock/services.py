@@ -24,7 +24,9 @@ def enregistrer_vente(reference_id, quantite, vendeur, canal=Vente.Canal.MAGASIN
         prix_unitaire=prix_remise(ref.prix_vente, remise_pct),
         cout_unitaire=ref.cout_achat,
         canal=canal,
-        vendeur=vendeur,
+        # Les ventes en ligne ne sont attribuées à aucun vendeur.
+        vendeur=None if canal == Vente.Canal.EN_LIGNE else vendeur,
+        saisie_par=vendeur,
     )
 
 

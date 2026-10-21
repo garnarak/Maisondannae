@@ -11,6 +11,7 @@ urlpatterns = [
     path("ventes/", views.ventes, name="ventes"),
     path("ventes/mes-ventes/", views.mes_ventes, name="mes_ventes"),
     path("ventes/vendeuse/<int:pk>/", views.ventes_vendeuse, name="ventes_vendeuse"),
+    path("ventes/en-ligne/", views.ventes_en_ligne, name="ventes_en_ligne"),
     path("ventes/<int:pk>/annuler/", views.annuler_vente, name="annuler_vente"),
     path("marge/", views.marge, name="marge"),
 ]

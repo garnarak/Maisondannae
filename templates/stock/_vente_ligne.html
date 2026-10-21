@@ -1,6 +1,6 @@
 <tr>
   <td data-label="{% if avec_date %}Date{% else %}Heure{% endif %}">{% if avec_date %}{{ v.date|date:"d/m/Y H:i" }}{% else %}{{ v.date|date:"H:i" }}{% endif %}</td>
-  <td data-label="Référence">{{ v.reference }}</td>
+  <td data-label="Référence">{{ v.reference }}{% if v.canal == "en_ligne" %} <span class="badge canal">En ligne</span>{% endif %}</td>
   <td class="num" data-label="Qté">{{ v.quantite }}</td>
   <td class="num" data-label="Prix unit.">
     {% if v.remise_pct %}<s class="muted">{{ v.prix_catalogue|floatformat:"2g" }} €</s> <span class="badge">−{{ v.remise_pct }} %</span><br>{% endif %}
@@ -8,7 +8,7 @@
   </td>
   <td class="num" data-label="Total">{{ v.chiffre_affaires|floatformat:"2g" }} €</td>
   {% if user.is_admin %}<td class="num" data-label="Marge">{{ v.marge|floatformat:"2g" }} €</td>{% endif %}
-  <td data-label="Vendeur">{{ v.vendeur.username|default:"—" }}</td>
+  <td data-label="Vendeur">{% if v.vendeur %}{{ v.vendeur.get_short_name|default:v.vendeur.username }}{% else %}<span class="muted">—</span>{% endif %}</td>
   {% if user.is_admin %}
   <td>
     <form method="post" action="{% url 'annuler_vente' v.pk %}" onsubmit="return confirm('Annuler cette vente et remettre l\'article en stock ?')">{% csrf_token %}

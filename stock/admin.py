@@ -27,7 +27,7 @@ class ReferenceAdmin(admin.ModelAdmin):
 @admin.register(Vente)
 class VenteAdmin(admin.ModelAdmin):
     list_display = [
-        "date", "reference", "quantite", "prix_catalogue", "remise_pct", "prix_unitaire", "cout_unitaire", "canal", "vendeur"
+        "date", "reference", "quantite", "prix_catalogue", "remise_pct", "prix_unitaire", "cout_unitaire", "canal", "vendeur", "saisie_par"
     ]
     list_filter = ["canal", "remise_pct", "date"]
     date_hierarchy = "date"

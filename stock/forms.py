@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import REMISES, Ajustement, Reference
+from .models import REMISES, Ajustement, Reference, Vente
 
 
 class ReferenceForm(forms.ModelForm):
@@ -27,6 +27,10 @@ class VenteForm(forms.Form):
         required=False,
         empty_value=0,
     )
+    canal = forms.ChoiceField(choices=Vente.Canal.choices, initial=Vente.Canal.MAGASIN, required=False)
+
+    def clean_canal(self):
+        return self.cleaned_data["canal"] or Vente.Canal.MAGASIN
 
 
 class AjustementForm(forms.Form):
