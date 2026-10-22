@@ -7,6 +7,16 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 0.4.0-beta — non publiée
+
+- Paiement des ventes en boutique : après « Vendre », choix entre espèces,
+  carte bancaire ou espèces + CB (le vendeur indique alors le montant en espèces)
+- Mode de paiement affiché sous le total de chaque vente
+- Nouvelle page Caisse (administrateurs) : espèces théoriquement en caisse,
+  récupération des espèces en laissant un fond de 30 € modifiable,
+  historique des récupérations et suivi mensuel espèces / CB / espèces récupérées
+- Les comptes restreints ne peuvent pas récupérer les espèces
+
 ## 0.3.0-beta — 21/10/2026
 
 - Ventes en ligne : bouton « En ligne » à côté de « Vendre » sur la liste du stock,

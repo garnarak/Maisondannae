@@ -8,12 +8,13 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import formats, timezone
 from django.views.decorators.http import require_POST
 
 from . import services
-from .forms import AjustementForm, ReferenceEditForm, ReferenceForm, VenteForm
-from .models import Reference, User, Vente
+from .forms import AjustementForm, PaiementForm, RecuperationForm, ReferenceEditForm, ReferenceForm, VenteForm
+from .models import FOND_DE_CAISSE, RecuperationEspeces, Reference, User, Vente, prix_remise
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
@@ -46,6 +47,10 @@ def stock_list(request):
 def vendre(request, pk):
     ref = get_object_or_404(Reference, pk=pk, active=True)
     form = VenteForm(request.POST)
+    if form.is_valid() and form.cleaned_data["canal"] == Vente.Canal.MAGASIN:
+        # Vente en boutique : le mode de paiement est choisi sur l'écran suivant.
+        url = reverse("paiement", args=[ref.pk])
+        return redirect(f"{url}?quantite={form.cleaned_data['quantite']}&remise_pct={form.cleaned_data['remise_pct']}")
     if form.is_valid():
         try:
             vente = services.enregistrer_vente(
@@ -65,6 +70,113 @@ def vendre(request, pk):
     else:
         messages.error(request, "Quantité ou solde invalide.")
     return redirect(request.POST.get("next") or "stock_list")
+
+
+@login_required
+def paiement(request, pk):
+    ref = get_object_or_404(Reference, pk=pk, active=True)
+    donnees = request.POST if request.method == "POST" else request.GET
+    form = PaiementForm(donnees)
+    vente_form = VenteForm(donnees)
+    if not vente_form.is_valid():
+        messages.error(request, "Quantité ou solde invalide.")
+        return redirect("stock_list")
+    quantite = vente_form.cleaned_data["quantite"]
+    remise_pct = vente_form.cleaned_data["remise_pct"]
+    prix = prix_remise(ref.prix_vente, remise_pct)
+    erreur = None
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                vente = services.enregistrer_vente(
+                    ref.pk, quantite, request.user, remise_pct=remise_pct,
+                    paiement=form.cleaned_data["paiement"],
+                    montant_especes=form.cleaned_data["montant_especes"],
+                )
+            except (services.StockInsuffisant, services.PaiementInvalide, ValueError) as e:
+                erreur = str(e)
+            else:
+                prix_txt = formats.number_format(vente.prix_unitaire, 2, use_l10n=True)
+                solde = f" soldé −{vente.remise_pct} % à {prix_txt} € pièce" if vente.remise_pct else ""
+                messages.success(
+                    request,
+                    f"Vente en boutique enregistrée : {vente.quantite} × {ref}{solde} — {vente.get_paiement_display()}.",
+                )
+                return redirect("stock_list")
+        else:
+            erreur = "Choisissez le mode de paiement et, pour un paiement mixte, le montant en espèces."
+    return render(
+        request,
+        "stock/paiement.html",
+        {"ref": ref, "quantite": quantite, "remise_pct": remise_pct, "prix": prix,
+         "total": prix * quantite, "erreur": erreur, "montant_especes": donnees.get("montant_especes", "")},
+    )
+
+
+@admin_required
+def caisse(request):
+    form = RecuperationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            rec = services.recuperer_especes(request.user, form.cleaned_data["fond_laisse"])
+        except services.PaiementInvalide as e:
+            form.add_error("fond_laisse", str(e))
+        else:
+            montant = formats.number_format(rec.montant_recupere, 2, use_l10n=True)
+            fond = formats.number_format(rec.fond_laisse, 2, use_l10n=True)
+            messages.success(request, f"Récupération enregistrée : {montant} € récupérés, {fond} € laissés dans la caisse.")
+            return redirect("caisse")
+
+    tz = timezone.get_current_timezone()
+    debut = timezone.localdate().replace(day=1)
+    debut_historique = datetime.datetime.combine(debut.replace(year=debut.year - 1), datetime.time.min, tzinfo=tz)
+    ventes_boutique = Vente.objects.filter(canal=Vente.Canal.MAGASIN, date__gte=debut_historique)
+    mois = {}
+    for ligne in (
+        ventes_boutique.annotate(mois=TruncMonth("date", tzinfo=tz)).values("mois")
+        .annotate(especes=Sum("montant_especes"), ca=Sum(CA))
+    ):
+        mois[ligne["mois"].date()] = {"especes": ligne["especes"] or Decimal(0), "ca": ligne["ca"] or Decimal(0)}
+    for ligne in (
+        ventes_boutique.filter(paiement__in=[Vente.Paiement.CB, Vente.Paiement.MIXTE])
+        .annotate(mois=TruncMonth("date", tzinfo=tz)).values("mois")
+        .annotate(ca=Sum(CA), especes=Sum("montant_especes"))
+    ):
+        mois[ligne["mois"].date()]["cb"] = (ligne["ca"] or Decimal(0)) - (ligne["especes"] or Decimal(0))
+    for ligne in (
+        RecuperationEspeces.objects.filter(date__gte=debut_historique)
+        .annotate(mois=TruncMonth("date", tzinfo=tz)).values("mois").annotate(recupere=Sum("montant_recupere"))
+    ):
+        mois.setdefault(ligne["mois"].date(), {"especes": Decimal(0), "ca": Decimal(0)})["recupere"] = ligne["recupere"]
+    suivi = [
+        {"mois": m, "especes": v["especes"], "cb": v.get("cb", Decimal(0)),
+         "recupere": v.get("recupere", Decimal(0)),
+         "non_renseigne": v["ca"] - v["especes"] - v.get("cb", Decimal(0))}
+        for m, v in sorted(mois.items(), reverse=True)
+    ]
+    # Mois sans aucun paiement renseigné (avant la gestion de la caisse) : rien à suivre.
+    suivi = [m for m in suivi if m["especes"] or m["cb"] or m["recupere"]]
+    derniere = services.derniere_recuperation()
+    en_caisse = services.especes_en_caisse()
+    fond = form.data.get("fond_laisse") if form.is_bound else None
+    try:
+        fond_valeur = Decimal(str(fond).replace(",", ".")) if fond not in (None, "") else min(FOND_DE_CAISSE, en_caisse)
+    except ArithmeticError:
+        fond_valeur = FOND_DE_CAISSE
+    return render(
+        request,
+        "stock/caisse.html",
+        {
+            "form": form,
+            "en_caisse": en_caisse,
+            "fond_valeur": f"{fond_valeur:.2f}",
+            "a_recuperer": max(en_caisse - fond_valeur, Decimal(0)),
+            "derniere": derniere,
+            "recuperations": RecuperationEspeces.objects.select_related("administrateur")[:30],
+            "suivi": suivi,
+            "fond_defaut": FOND_DE_CAISSE,
+        },
+    )
 
 
 @login_required

@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from stock import services
+from stock.tests.outils import vendre
 from stock.models import Ajustement, Reference, User, Vente
 
 
@@ -48,7 +49,7 @@ class DroitsTests(BaseTestCase):
         self.assertEqual(self.robe.prix_vente, Decimal("89.00"))
 
     def test_restreint_ne_voit_pas_la_marge_des_ventes(self):
-        services.enregistrer_vente(self.robe.pk, 1, self.admin)
+        vendre(self.robe.pk, 1, self.admin)
         self.client.force_login(self.vendeuse)
         r = self.client.get(reverse("ventes"))
         self.assertContains(r, "Robe lin")
@@ -61,7 +62,7 @@ class DroitsTests(BaseTestCase):
 
     def test_restreint_peut_vendre_et_ajuster(self):
         self.client.force_login(self.vendeuse)
-        self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 2})
+        self.client.post(reverse("paiement", args=[self.robe.pk]), {"quantite": 2, "paiement": "especes"})
         self.client.post(reverse("ajuster", args=[self.robe.pk]), {"variation": 4, "motif": "reassort"})
         self.robe.refresh_from_db()
         self.assertEqual(self.robe.quantite, 7)
@@ -69,7 +70,7 @@ class DroitsTests(BaseTestCase):
 
 class VenteTests(BaseTestCase):
     def test_vente_decremente_le_stock_et_fige_prix_et_cout(self):
-        vente = services.enregistrer_vente(self.robe.pk, 2, self.vendeuse)
+        vente = vendre(self.robe.pk, 2, self.vendeuse)
         self.robe.refresh_from_db()
         self.assertEqual(self.robe.quantite, 3)
         Reference.objects.filter(pk=self.robe.pk).update(prix_vente=99, cout_achat=40)
@@ -80,13 +81,13 @@ class VenteTests(BaseTestCase):
 
     def test_stock_insuffisant(self):
         with self.assertRaises(services.StockInsuffisant):
-            services.enregistrer_vente(self.robe.pk, 6, self.vendeuse)
+            vendre(self.robe.pk, 6, self.vendeuse)
         self.robe.refresh_from_db()
         self.assertEqual(self.robe.quantite, 5)
         self.assertFalse(Vente.objects.exists())
 
     def test_annulation_remet_en_stock(self):
-        vente = services.enregistrer_vente(self.robe.pk, 2, self.vendeuse)
+        vente = vendre(self.robe.pk, 2, self.vendeuse)
         self.client.force_login(self.admin)
         self.client.post(reverse("annuler_vente", args=[vente.pk]))
         self.robe.refresh_from_db()
@@ -104,8 +105,8 @@ class VenteTests(BaseTestCase):
 class MargeTests(BaseTestCase):
     def test_synthese_mensuelle(self):
         pull = Reference.objects.create(designation="Pull", cout_achat=10, prix_vente=20, quantite=10)
-        services.enregistrer_vente(self.robe.pk, 2, self.vendeuse)  # marge 115,66
-        services.enregistrer_vente(pull.pk, 3, self.vendeuse)  # marge 30
+        vendre(self.robe.pk, 2, self.vendeuse)  # marge 115,66
+        vendre(pull.pk, 3, self.vendeuse)  # marge 30
         # Une vente du mois précédent ne doit pas compter.
         Vente.objects.create(
             reference=pull, quantite=1, prix_unitaire=20, cout_unitaire=10,

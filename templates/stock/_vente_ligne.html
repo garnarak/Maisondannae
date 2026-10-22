@@ -6,7 +6,10 @@
     {% if v.remise_pct %}<s class="muted">{{ v.prix_catalogue|floatformat:"2g" }} €</s> <span class="badge">−{{ v.remise_pct }} %</span><br>{% endif %}
     {{ v.prix_unitaire|floatformat:"2g" }} €
   </td>
-  <td class="num" data-label="Total">{{ v.chiffre_affaires|floatformat:"2g" }} €</td>
+  <td class="num" data-label="Total">{{ v.chiffre_affaires|floatformat:"2g" }} €
+    {% if v.paiement == "mixte" %}<small class="muted paiement-detail">{{ v.montant_especes|floatformat:"2g" }} € esp. + {{ v.montant_cb|floatformat:"2g" }} € CB</small>
+    {% elif v.paiement %}<small class="muted paiement-detail">{{ v.get_paiement_display }}</small>{% endif %}
+  </td>
   {% if user.is_admin %}<td class="num" data-label="Marge">{{ v.marge|floatformat:"2g" }} €</td>{% endif %}
   <td data-label="Vendeur">{% if v.vendeur %}{{ v.vendeur.get_short_name|default:v.vendeur.username }}{% else %}<span class="muted">—</span>{% endif %}</td>
   {% if user.is_admin %}

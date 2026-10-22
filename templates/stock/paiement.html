@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Paiement · {{ ref }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'stock_list' %}">← Annuler et revenir au stock</a></p>
+<div class="card narrow paiement">
+  <h1>Paiement</h1>
+  <p class="lead">{{ quantite }} × {{ ref.designation }}{% if remise_pct %} <span class="badge">−{{ remise_pct }} %</span>{% endif %}</p>
+  <p class="total">Total : <strong>{{ total|floatformat:"2g" }} €</strong></p>
+  {% if erreur %}<div class="msg msg-error" role="alert">{{ erreur }}</div>{% endif %}
+
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="quantite" value="{{ quantite }}">
+    <input type="hidden" name="remise_pct" value="{{ remise_pct }}">
+    <div class="choix-paiement">
+      <button class="primary" name="paiement" value="especes">Espèces · {{ total|floatformat:"2g" }} €</button>
+      <button class="primary" name="paiement" value="cb">Carte bancaire</button>
+    </div>
+  </form>
+
+  <form method="post" class="mixte">{% csrf_token %}
+    <input type="hidden" name="quantite" value="{{ quantite }}">
+    <input type="hidden" name="remise_pct" value="{{ remise_pct }}">
+    <h2>Espèces + carte bancaire</h2>
+    <label>Montant payé en espèces (€)
+      <input type="number" name="montant_especes" step="0.01" min="0.01" value="{{ montant_especes }}" inputmode="decimal" required>
+    </label>
+    <small class="muted">Le reste du total est payé par carte bancaire.</small>
+    <button class="block" name="paiement" value="mixte">Valider espèces + CB</button>
+  </form>
+</div>
+{% endblock %}

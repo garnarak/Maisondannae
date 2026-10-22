@@ -22,6 +22,7 @@
       <a href="{% url 'ventes' %}" {% if request.resolver_match.url_name in 'ventes mes_ventes ventes_vendeuse ventes_en_ligne' %}aria-current="page"{% endif %}>Ventes</a>
       {% if user.is_admin %}
       <a href="{% url 'marge' %}" {% if request.resolver_match.url_name == 'marge' %}aria-current="page"{% endif %}>Marge</a>
+      <a href="{% url 'caisse' %}" {% if request.resolver_match.url_name == 'caisse' %}aria-current="page"{% endif %}>Caisse</a>
       <a href="{% url 'admin:index' %}">Administration</a>
       {% endif %}
       <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}

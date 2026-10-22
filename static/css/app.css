@@ -174,3 +174,17 @@ button.en-ligne { border-color: var(--accent); color: var(--accent); background:
 
 /* Montants des indicateurs : jamais coupés, taille adaptée à la largeur. */
 .kpi strong { white-space: nowrap; font-size: clamp(1.4rem, 2.5vw, 2.1rem); }
+
+/* Paiement en boutique */
+.paiement .total { font-size: 1.2rem; }
+.choix-paiement { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 8px; }
+.choix-paiement button { min-height: 64px; font-size: 1.05rem; white-space: normal; }
+@media (max-width: 520px) { .choix-paiement { grid-template-columns: 1fr; } }
+.mixte { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.mixte h2 { margin-top: 0; font-size: 1.15rem; }
+small.paiement-detail { display: block; font-size: .78rem; }
+/* Caisse */
+.kpi strong.petit { font-size: 1.3rem; }
+.kpi small.muted { margin-top: 6px; }
+.recuperation { max-width: 420px; }
+.a-recuperer { font-size: 1.1rem; margin: 12px 0; }

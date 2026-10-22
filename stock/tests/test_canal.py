@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from stock import services
+from stock.tests.outils import vendre
 from stock.models import Reference, User, Vente
 
 
@@ -29,7 +30,13 @@ class VentesEnLigneTests(TestCase):
 
     def test_par_defaut_la_vente_est_en_boutique(self):
         self.client.force_login(self.lea)
-        r = self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 1}, follow=True)
+        r = self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 1})
+        # « Vendre » mène à l'écran de paiement, sans encore enregistrer la vente.
+        self.assertRedirects(r, reverse("paiement", args=[self.robe.pk]) + "?quantite=1&remise_pct=0")
+        self.assertFalse(Vente.objects.exists())
+        r = self.client.post(
+            reverse("paiement", args=[self.robe.pk]), {"quantite": 1, "paiement": "cb"}, follow=True
+        )
         self.assertContains(r, "Vente en boutique enregistrée")
         self.assertEqual(Vente.objects.get().canal, Vente.Canal.MAGASIN)
 
@@ -45,8 +52,8 @@ class VentesEnLigneTests(TestCase):
         self.assertContains(r, 'name="canal" value="en_ligne"')
 
     def test_repartition_boutique_en_ligne(self):
-        services.enregistrer_vente(self.robe.pk, 1, self.lea)
-        services.enregistrer_vente(self.robe.pk, 2, self.lea, canal=Vente.Canal.EN_LIGNE)
+        vendre(self.robe.pk, 1, self.lea)
+        vendre(self.robe.pk, 2, self.lea, canal=Vente.Canal.EN_LIGNE)
         self.client.force_login(self.lea)
         r = self.client.get(reverse("ventes"))
         for periode in ("jour", "mois"):
@@ -76,8 +83,8 @@ class VentesEnLigneNonAttribueesTests(TestCase):
         )
 
     def setUp(self):
-        services.enregistrer_vente(self.robe.pk, 1, self.lea)  # boutique
-        services.enregistrer_vente(self.pull.pk, 2, self.lea, canal=Vente.Canal.EN_LIGNE)
+        vendre(self.robe.pk, 1, self.lea)  # boutique
+        vendre(self.pull.pk, 2, self.lea, canal=Vente.Canal.EN_LIGNE)
 
     def test_la_vente_en_ligne_n_a_pas_de_vendeur_mais_garde_la_saisie(self):
         en_ligne = Vente.objects.get(canal=Vente.Canal.EN_LIGNE)

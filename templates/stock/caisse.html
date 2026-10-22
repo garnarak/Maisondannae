@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Caisse<script>
+  // Met à jour le montant à récupérer quand on change le fond laissé.
+  (function () {
+    var champ = document.getElementById("fond_laisse"), cible = document.getElementById("a-recuperer");
+    if (!champ || !cible) return;
+    var enCaisse = parseFloat(champ.dataset.enCaisse);
+    champ.addEventListener("input", function () {
+      var fond = parseFloat(champ.value.replace(",", "."));
+      var reste = isNaN(fond) ? enCaisse : Math.max(enCaisse - fond, 0);
+      cible.textContent = reste.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+  })();
+</script>
+{% endblock %}
+{% block content %}
+<h1>Caisse</h1>
+
+<div class="kpis">
+  <div class="kpi accent"><span>Espèces en caisse</span><strong>{{ en_caisse|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Dernière récupération</span>
+    <strong class="petit">{% if derniere %}{{ derniere.date|date:"j F à H:i" }}{% else %}Aucune{% endif %}</strong>
+    {% if derniere %}<small class="muted">par {{ derniere.administrateur.get_short_name|default:derniere.administrateur.username }} · {{ derniere.fond_laisse|floatformat:"2g" }} € laissés</small>{% endif %}
+  </div>
+</div>
+<p class="muted">Montant théorique : fond laissé à la dernière récupération{% if not derniere %} ({{ fond_defaut|floatformat:"2g" }} € avant la première){% endif %} + espèces encaissées depuis.</p>
+
+<section class="card">
+  <h2>Récupérer les espèces</h2>
+  <form method="post" class="recuperation">{% csrf_token %}
+    {% for e in form.fond_laisse.errors %}<div class="error">{{ e }}</div>{% endfor %}
+    <label>Montant laissé dans la caisse (€)
+      <input type="number" name="fond_laisse" id="fond_laisse" step="0.01" min="0" max="{{ en_caisse|stringformat:'s' }}" value="{{ fond_valeur }}" inputmode="decimal" required data-en-caisse="{{ en_caisse|stringformat:'s' }}">
+    </label>
+    <p class="a-recuperer">Montant à récupérer : <strong><span id="a-recuperer">{{ a_recuperer|floatformat:"2g" }}</span> €</strong></p>
+    <button class="primary" onclick="return confirm('Confirmer la récupération des espèces ?')">J'ai récupéré les espèces</button>
+  </form>
+</section>
+
+<h2>Suivi des espèces par mois</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Mois</th><th class="num">Encaissé en espèces</th><th class="num">Encaissé par CB</th><th class="num">Espèces récupérées</th></tr></thead>
+  <tbody>
+  {% for m in suivi %}
+    <tr>
+      <td data-label="Mois">{{ m.mois|date:"F Y"|capfirst }}</td>
+      <td class="num" data-label="Espèces">{{ m.especes|floatformat:"2g" }} €</td>
+      <td class="num" data-label="CB">{{ m.cb|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Récupéré">{{ m.recupere|floatformat:"2g" }} €</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="muted">Aucune donnée pour l'instant.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted">Ventes en boutique uniquement. Les ventes enregistrées avant la gestion de la caisse n'ont pas de mode de paiement et ne sont comptées dans aucune des deux colonnes.</p>
+
+<h2>Historique des récupérations</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Date</th><th>Par</th><th class="num">En caisse</th><th class="num">Récupéré</th><th class="num">Laissé</th></tr></thead>
+  <tbody>
+  {% for r in recuperations %}
+    <tr>
+      <td data-label="Date">{{ r.date|date:"d/m/Y H:i" }}</td>
+      <td data-label="Par">{{ r.administrateur.get_short_name|default:r.administrateur.username }}</td>
+      <td class="num" data-label="En caisse">{{ r.especes_en_caisse|floatformat:"2g" }} €</td>
+      <td class="num" data-label="Récupéré"><strong>{{ r.montant_recupere|floatformat:"2g" }} €</strong></td>
+      <td class="num" data-label="Laissé">{{ r.fond_laisse|floatformat:"2g" }} €</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="muted">Aucune récupération pour l'instant.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<script>
+  // Met à jour le montant à récupérer quand on change le fond laissé.
+  (function () {
+    var champ = document.getElementById("fond_laisse"), cible = document.getElementById("a-recuperer");
+    if (!champ || !cible) return;
+    var enCaisse = parseFloat(champ.dataset.enCaisse);
+    champ.addEventListener("input", function () {
+      var fond = parseFloat(champ.value.replace(",", "."));
+      var reste = isNaN(fond) ? enCaisse : Math.max(enCaisse - fond, 0);
+      cible.textContent = reste.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+  })();
+</script>
+{% endblock %}

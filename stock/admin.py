@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Ajustement, Reference, User, Vente
+from .models import Ajustement, RecuperationEspeces, Reference, User, Vente
 
 
 @admin.register(User)
@@ -27,9 +27,9 @@ class ReferenceAdmin(admin.ModelAdmin):
 @admin.register(Vente)
 class VenteAdmin(admin.ModelAdmin):
     list_display = [
-        "date", "reference", "quantite", "prix_catalogue", "remise_pct", "prix_unitaire", "cout_unitaire", "canal", "vendeur", "saisie_par"
+        "date", "reference", "quantite", "prix_catalogue", "remise_pct", "prix_unitaire", "cout_unitaire", "canal", "paiement", "montant_especes", "vendeur", "saisie_par"
     ]
-    list_filter = ["canal", "remise_pct", "date"]
+    list_filter = ["canal", "paiement", "remise_pct", "date"]
     date_hierarchy = "date"
 
     def has_add_permission(self, request):
@@ -54,4 +54,16 @@ class AjustementAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RecuperationEspeces)
+class RecuperationEspecesAdmin(admin.ModelAdmin):
+    list_display = ["date", "administrateur", "especes_en_caisse", "montant_recupere", "fond_laisse"]
+    date_hierarchy = "date"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False
