@@ -7,6 +7,14 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 0.5.0-beta — non publiée
+
+- Application installable sur téléphone et tablette (iPhone, iPad, Android) :
+  icône Maison d'Annaé sur l'écran d'accueil et ouverture en plein écran,
+  sans barre d'adresse
+- Page « Pas de connexion » quand le réseau est coupé
+- Nouvelles icônes tirées du logo (écran d'accueil, onglet du navigateur)
+
 ## 0.4.0-beta — 27/10/2026
 
 - Paiement des ventes en boutique : après « Vendre », choix entre espèces,

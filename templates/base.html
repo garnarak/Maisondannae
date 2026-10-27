@@ -4,7 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Stock{% endblock %} · Maison d'Annaé</title>
-  <link rel="icon" href="{% static 'img/logo-petit.jpg' %}">
+  <link rel="icon" href="{% static 'img/icones/favicon-32.png' %}" sizes="32x32">
+  <link rel="manifest" href="{% url 'manifeste' %}">
+  <meta name="theme-color" content="#c2185b">
+  <link rel="apple-touch-icon" href="{% static 'img/icones/apple-touch-icon.png' %}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Maison d'Annaé">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500&display=swap">
@@ -38,5 +45,11 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">Version {{ APP_VERSION }}{% if "beta" in APP_VERSION %} · <span class="badge">Bêta</span>{% endif %}</footer>
+  <script>
+    // Application installable : enregistre le service worker (page « Pas de connexion »).
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () { navigator.serviceWorker.register("{% url 'service_worker' %}"); });
+    }
+  </script>
 </body>
 </html>
