@@ -89,6 +89,18 @@ class Vente(models.Model):
     vendeur = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="ventes"
     )
+    class Paiement(models.TextChoices):
+        ESPECES = "especes", "Espèces"
+        CB = "cb", "Carte bancaire"
+        MIXTE = "mixte", "Espèces + CB"
+
+    # Mode de paiement des ventes en boutique (vide pour les ventes en ligne et les
+    # ventes enregistrées avant la gestion de la caisse).
+    paiement = models.CharField("paiement", max_length=10, choices=Paiement.choices, blank=True)
+    montant_especes = models.DecimalField(
+        "montant en espèces", max_digits=10, decimal_places=2, default=0,
+        help_text="Part du total payée en espèces.",
+    )
     # Compte qui a saisi la vente, pour la traçabilité. Une vente en ligne n'a pas de
     # vendeur (elle n'est attribuée à personne) mais garde la trace de qui l'a déclarée.
     saisie_par = models.ForeignKey(
@@ -116,6 +128,12 @@ class Vente(models.Model):
         return (self.prix_unitaire - self.cout_unitaire) * self.quantite
 
     @property
+    def montant_cb(self):
+        if self.paiement in (self.Paiement.CB, self.Paiement.MIXTE):
+            return self.chiffre_affaires - self.montant_especes
+        return Decimal(0)
+
+    @property
     def montant_remise(self):
         return (self.prix_catalogue - self.prix_unitaire) * self.quantite
 
@@ -139,3 +157,29 @@ class Ajustement(models.Model):
 
     class Meta:
         ordering = ["-date"]
+
+
+# Montant laissé dans la caisse après une récupération des espèces, proposé par défaut.
+FOND_DE_CAISSE = Decimal("30.00")
+
+
+class RecuperationEspeces(models.Model):
+    """Un administrateur vide la caisse en y laissant un fond (30 € par défaut)."""
+
+    date = models.DateTimeField(default=timezone.now, db_index=True)
+    administrateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="recuperations_especes"
+    )
+    especes_en_caisse = models.DecimalField(
+        "espèces en caisse avant récupération", max_digits=10, decimal_places=2
+    )
+    fond_laisse = models.DecimalField("fond laissé dans la caisse", max_digits=10, decimal_places=2)
+    montant_recupere = models.DecimalField("montant récupéré", max_digits=10, decimal_places=2)
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "récupération des espèces"
+        verbose_name_plural = "récupérations des espèces"
+
+    def __str__(self):
+        return f"{self.montant_recupere} € le {timezone.localtime(self.date):%d/%m/%Y %H:%M}"

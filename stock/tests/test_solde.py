@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from stock import services
+from stock.tests.outils import vendre
 from stock.models import Reference, User, Vente, prix_remise
 
 
@@ -23,7 +24,9 @@ class SoldeTests(TestCase):
 
     def test_vente_soldee_depuis_la_tablette(self):
         self.client.force_login(self.vendeuse)
-        r = self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 2, "remise_pct": 30}, follow=True)
+        r = self.client.post(
+            reverse("paiement", args=[self.robe.pk]), {"quantite": 2, "remise_pct": 30, "paiement": "cb"}, follow=True
+        )
         self.assertContains(r, "soldé −30 % à 62,99 € pièce")
         vente = Vente.objects.get()
         self.assertEqual(vente.prix_catalogue, Decimal("89.99"))
@@ -37,7 +40,7 @@ class SoldeTests(TestCase):
 
     def test_sans_solde_par_defaut(self):
         self.client.force_login(self.vendeuse)
-        self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 1})
+        self.client.post(reverse("paiement", args=[self.robe.pk]), {"quantite": 1, "paiement": "cb"})
         vente = Vente.objects.get()
         self.assertEqual(vente.remise_pct, 0)
         self.assertEqual(vente.prix_unitaire, Decimal("89.99"))
@@ -48,7 +51,7 @@ class SoldeTests(TestCase):
         self.assertContains(r, "Quantité ou solde invalide")
         self.assertFalse(Vente.objects.exists())
         with self.assertRaises(ValueError):
-            services.enregistrer_vente(self.robe.pk, 1, self.admin, remise_pct=15)
+            vendre(self.robe.pk, 1, self.admin, remise_pct=15)
 
     def test_liste_propose_les_prix_soldes(self):
         self.client.force_login(self.vendeuse)
@@ -57,8 +60,8 @@ class SoldeTests(TestCase):
         self.assertContains(r, "−70 % · 27,00 €")
 
     def test_historique_et_synthese(self):
-        services.enregistrer_vente(self.robe.pk, 2, self.vendeuse, remise_pct=30)
-        services.enregistrer_vente(self.robe.pk, 1, self.vendeuse)
+        vendre(self.robe.pk, 2, self.vendeuse, remise_pct=30)
+        vendre(self.robe.pk, 1, self.vendeuse)
         self.client.force_login(self.admin)
         self.assertContains(self.client.get(reverse("ventes")), "−30 %")
         r = self.client.get(reverse("marge"))
@@ -81,8 +84,8 @@ class ChiffreAffairesDuJourTests(TestCase):
 
         from django.utils import timezone
 
-        services.enregistrer_vente(self.robe.pk, 2, self.vendeuse, remise_pct=30)  # 2 × 62,99
-        services.enregistrer_vente(self.robe.pk, 1, self.vendeuse)  # 89,99
+        vendre(self.robe.pk, 2, self.vendeuse, remise_pct=30)  # 2 × 62,99
+        vendre(self.robe.pk, 1, self.vendeuse)  # 89,99
         Vente.objects.create(  # hier : ne compte pas
             reference=self.robe, quantite=1, prix_unitaire=Decimal("89.99"), cout_unitaire=Decimal("30"),
             date=timezone.now() - datetime.timedelta(days=1),
@@ -133,7 +136,7 @@ class HistoriqueDuMoisTests(TestCase):
 
         today = timezone.localdate()
         debut = today.replace(day=1)
-        services.enregistrer_vente(self.robe.pk, 1, self.vendeuse)  # aujourd'hui
+        vendre(self.robe.pk, 1, self.vendeuse)  # aujourd'hui
         if today.day > 1:
             self._vente_le(debut, quantite=2)  # plus tôt ce mois-ci
         self._vente_le(debut - datetime.timedelta(days=1))  # mois précédent : exclu
@@ -167,8 +170,8 @@ class MesVentesTests(TestCase):
         )
 
     def setUp(self):
-        services.enregistrer_vente(self.robe.pk, 1, self.lea)
-        services.enregistrer_vente(self.pull.pk, 2, self.sarah)
+        vendre(self.robe.pk, 1, self.lea)
+        vendre(self.pull.pk, 2, self.sarah)
         self.client.force_login(self.lea)
 
     def test_ventes_montre_toute_la_boutique(self):
@@ -203,8 +206,8 @@ class VentesParVendeuseTests(TestCase):
         )
 
     def setUp(self):
-        services.enregistrer_vente(self.robe.pk, 1, self.lea)
-        services.enregistrer_vente(self.pull.pk, 2, self.sarah)
+        vendre(self.robe.pk, 1, self.lea)
+        vendre(self.pull.pk, 2, self.sarah)
 
     def test_l_administrateur_a_un_bouton_par_vendeuse_active(self):
         self.client.force_login(self.admin)

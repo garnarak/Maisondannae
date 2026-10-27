@@ -1,6 +1,8 @@
+from decimal import Decimal
+
 from django import forms
 
-from .models import REMISES, Ajustement, Reference, Vente
+from .models import FOND_DE_CAISSE, REMISES, Ajustement, Reference, Vente
 
 
 class ReferenceForm(forms.ModelForm):
@@ -31,6 +33,20 @@ class VenteForm(forms.Form):
 
     def clean_canal(self):
         return self.cleaned_data["canal"] or Vente.Canal.MAGASIN
+
+
+class PaiementForm(VenteForm):
+    paiement = forms.ChoiceField(choices=Vente.Paiement.choices)
+    montant_especes = forms.DecimalField(
+        label="Montant payé en espèces", min_value=Decimal("0.01"), max_digits=10, decimal_places=2, required=False
+    )
+
+
+class RecuperationForm(forms.Form):
+    fond_laisse = forms.DecimalField(
+        label="Montant laissé dans la caisse", min_value=0, max_digits=10, decimal_places=2,
+        initial=FOND_DE_CAISSE,
+    )
 
 
 class AjustementForm(forms.Form):
