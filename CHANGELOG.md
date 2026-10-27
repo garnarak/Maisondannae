@@ -7,7 +7,7 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 0.4.0-beta — non publiée
+## 0.4.0-beta — 27/10/2026
 
 - Paiement des ventes en boutique : après « Vendre », choix entre espèces,
   carte bancaire ou espèces + CB (le vendeur indique alors le montant en espèces)
