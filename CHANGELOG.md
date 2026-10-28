@@ -7,6 +7,12 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 0.5.1-beta — non publiée
+
+- Commande `vider_donnees_de_test` pour supprimer les données de test (références,
+  ventes, ajustements, récupérations d'espèces) avant de saisir le vrai stock ;
+  les comptes utilisateurs sont conservés
+
 ## 0.5.0-beta — 28/10/2026
 
 - Application installable sur téléphone et tablette (iPhone, iPad, Android) :
