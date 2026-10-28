@@ -1,0 +1,27 @@
+{% load static %}<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="{{ couleur }}">
+  <title>Pas de connexion · Maison d'Annaé</title>
+  <style>
+    /* Page autonome : elle doit s'afficher sans réseau, donc sans feuille de style externe. */
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           background: {{ fond }}; color: #3b0f26; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 360px; padding: 32px 24px; text-align: center; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; font-size: 1.8rem; margin: 0 0 12px; }
+    p { line-height: 1.5; color: #6b4157; }
+    button { margin-top: 16px; font: inherit; padding: 12px 28px; min-height: 44px; border: 0; border-radius: 999px;
+             background: {{ couleur }}; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pas de connexion</h1>
+    <p>L'application a besoin d'internet pour afficher le stock et enregistrer les ventes. Vérifiez le Wi-Fi ou les données mobiles, puis réessayez.</p>
+    <p><strong>Si vous veniez d'enregistrer une vente ou un ajustement, il n'a pas été pris en compte :</strong> refaites-le une fois la connexion revenue.</p>
+    <button onclick="location.reload()">Réessayer</button>
+  </main>
+</body>
+</html>

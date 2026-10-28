@@ -41,6 +41,19 @@ Puis ouvrir http://127.0.0.1:8000. Les autres comptes se créent dans
 
 Tests : `.venv/bin/python manage.py test`
 
+## Installer l'application sur un téléphone ou une tablette
+
+L'outil s'installe comme une application, avec l'icône Maison d'Annaé sur l'écran
+d'accueil et une ouverture en plein écran :
+
+- **iPhone / iPad** : ouvrir le site dans **Safari**, toucher **Partager**, puis
+  **Sur l'écran d'accueil**.
+- **Android** : ouvrir le site dans **Chrome**, menu **⋮**, puis **Installer l'application**
+  (ou **Ajouter à l'écran d'accueil**).
+
+Les mises à jour publiées sur le serveur sont disponibles immédiatement, sans rien
+réinstaller. Une connexion internet reste nécessaire.
+
 ## Gestion des versions
 
 - La branche `main` contient toujours une version stable, prête à être mise en ligne.
