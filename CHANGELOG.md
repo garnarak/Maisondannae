@@ -7,7 +7,7 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 0.5.1-beta — non publiée
+## 0.5.1-beta — 29/10/2026
 
 - Commande `vider_donnees_de_test` pour supprimer les données de test (références,
   ventes, ajustements, récupérations d'espèces) avant de saisir le vrai stock ;
