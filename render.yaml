@@ -20,6 +20,15 @@ services:
         sync: false
       - key: DJANGO_ADMIN_PASSWORD
         sync: false
+      # Alertes d'erreur par e-mail (facultatif) : voir README, section « Alertes par e-mail ».
+      - key: DJANGO_ADMINS
+        sync: false
+      - key: DJANGO_EMAIL_HOST
+        sync: false
+      - key: DJANGO_EMAIL_HOST_USER
+        sync: false
+      - key: DJANGO_EMAIL_HOST_PASSWORD
+        sync: false
 
 databases:
   - name: maisondannae-db

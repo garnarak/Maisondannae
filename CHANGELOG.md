@@ -7,6 +7,16 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.0.0 — 29/10/2026
+
+Première version de production.
+
+- Fin de la phase de test : la mention « Bêta » disparaît du bas de page
+- Alertes par e-mail : chaque erreur du site est envoyée aux administrateurs
+  (adresses et serveur d'envoi à renseigner sur Render)
+- Les erreurs restent aussi visibles dans les journaux Render
+- Page d'erreur en français, qui invite à vérifier la dernière vente avant de la refaire
+
 ## 0.5.1-beta — 29/10/2026
 
 - Commande `vider_donnees_de_test` pour supprimer les données de test (références,
