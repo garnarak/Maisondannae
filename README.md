@@ -54,6 +54,21 @@ d'accueil et une ouverture en plein écran :
 Les mises à jour publiées sur le serveur sont disponibles immédiatement, sans rien
 réinstaller. Une connexion internet reste nécessaire.
 
+## Alertes par e-mail
+
+En production, chaque erreur du site envoie un e-mail détaillé aux administrateurs.
+À renseigner dans Render (service **maisondannae** → **Environment**) :
+
+| Variable | Exemple |
+| --- | --- |
+| `DJANGO_ADMINS` | `garnik@exemple.fr` (plusieurs adresses séparées par des virgules) |
+| `DJANGO_EMAIL_HOST` | `smtp.gmail.com` |
+| `DJANGO_EMAIL_HOST_USER` | l'adresse Gmail qui envoie |
+| `DJANGO_EMAIL_HOST_PASSWORD` | un **mot de passe d'application** Gmail (pas le mot de passe habituel) |
+| `DJANGO_EMAIL_PORT` | `587` (valeur par défaut) |
+
+Pour vérifier l'envoi, dans le **Shell** Render : `python manage.py sendtestemail --admins`.
+
 ## Gestion des versions
 
 - La branche `main` contient toujours une version stable, prête à être mise en ligne.

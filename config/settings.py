@@ -8,7 +8,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Version affichée dans l'application. À mettre à jour à chaque version publiée (voir CHANGELOG.md).
-APP_VERSION = "0.5.1-beta"
+APP_VERSION = "1.0.0"
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key" if DEBUG else None)
@@ -103,3 +103,38 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "1") == "1"
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Alertes par e-mail : en production, chaque erreur du site envoie un e-mail aux
+# administrateurs listés dans DJANGO_ADMINS (adresses séparées par des virgules).
+# Sans DJANGO_ADMINS ni DJANGO_EMAIL_HOST, aucun e-mail n'est envoyé.
+ADMINS = [(adresse.strip(), adresse.strip()) for adresse in os.environ.get("DJANGO_ADMINS", "").split(",") if adresse.strip()]
+EMAIL_HOST = os.environ.get("DJANGO_EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("DJANGO_EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("DJANGO_EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("DJANGO_EMAIL_USE_TLS", "1") == "1"
+EMAIL_TIMEOUT = 10
+SERVER_EMAIL = DEFAULT_FROM_EMAIL = os.environ.get("DJANGO_EMAIL_FROM", EMAIL_HOST_USER or "webmaster@localhost")
+EMAIL_SUBJECT_PREFIX = "[Maison d'Annaé] "
+if not EMAIL_HOST:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Journal : les erreurs apparaissent toujours dans les journaux Render, et partent par
+# e-mail aux administrateurs quand le site tourne en production.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {"production": {"()": "django.utils.log.RequireDebugFalse"}},
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+        "email_admins": {
+            "level": "ERROR",
+            "filters": ["production"],
+            "class": "django.utils.log.AdminEmailHandler",
+        },
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO"},
+        "django.request": {"handlers": ["console", "email_admins"], "level": "ERROR", "propagate": False},
+    },
+}
