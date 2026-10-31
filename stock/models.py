@@ -35,8 +35,27 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
 
+class Categorie(models.Model):
+    """Catégorie d'article (Veste, Pantalon…). La liste se gère depuis l'administration."""
+
+    nom = models.CharField(max_length=60, unique=True)
+
+    class Meta:
+        ordering = ["nom"]
+        verbose_name = "catégorie"
+
+    def __str__(self):
+        return self.nom
+
+
 class Reference(models.Model):
     designation = models.CharField("désignation", max_length=200, unique=True)
+    # Obligatoire dans les formulaires ; vide possible seulement pour les références
+    # créées avant l'ajout des catégories.
+    categorie = models.ForeignKey(
+        Categorie, on_delete=models.PROTECT, null=True, blank=True, related_name="references",
+        verbose_name="catégorie",
+    )
     cout_achat = models.DecimalField(
         "coût d'achat", max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
     )

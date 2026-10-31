@@ -7,6 +7,15 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.1.0 — 31/10/2026
+
+- Catégories d'articles : Veste, Pantalon, Jean, Chemise, Pull, Débardeur,
+  T-shirt manche longue ; d'autres se créent dans Administration → Catégories
+- Catégorie obligatoire à la création d'une référence, modifiable avec « Modifier »
+- Liste du stock : catégorie affichée sous le nom de chaque article, et filtre par
+  catégorie à côté de la recherche
+- Bouton « En ligne » : confirmation demandée avant d'enregistrer la vente
+
 ## 1.0.0 — 29/10/2026
 
 Première version de production.

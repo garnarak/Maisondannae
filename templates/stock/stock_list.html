@@ -1,11 +1,23 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Stock{% endblock %}
+{% block title %}Stock<script>
+  // Une vente en ligne s'enregistre sans écran de paiement : on demande confirmation.
+  function confirmerVenteEnLigne(bouton) {
+    var quantite = bouton.form.querySelector("[name=quantite]").value || "1";
+    return confirm("Déclarer une vente EN LIGNE ?\n\n" + quantite + " × " + bouton.dataset.article +
+                   "\n\nElle ne sera attribuée à aucune vendeuse.");
+  }
+</script>
+{% endblock %}
 {% block content %}
 <div class="toolbar">
   <h1>Stock</h1>
   <form method="get" class="search">
     <input type="search" name="q" value="{{ q }}" placeholder="Rechercher une référence…" aria-label="Rechercher">
+    <select name="categorie" aria-label="Catégorie" onchange="this.form.submit()">
+      <option value="">Toutes les catégories</option>
+      {% for c in categories %}<option value="{{ c.pk }}" {% if c.pk == categorie_choisie %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+    </select>
   </form>
   {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}">+ Nouvelle référence</a>{% endif %}
 </div>
@@ -14,7 +26,7 @@
 <table class="stock">
   <thead>
     <tr>
-      <th>Désignation</th>
+      <th>Désignation · Catégorie</th>
       {% if user.is_admin %}<th class="num">Coût d'achat</th>{% endif %}
       <th class="num">Prix de vente</th>
       {% if user.is_admin %}<th class="num">Marge unit.</th>{% endif %}
@@ -26,7 +38,8 @@
   <tbody>
   {% for ref in references %}
     <tr>
-      <td data-label="Désignation"><span class="designation">{{ ref.designation }}</span></td>
+      <td data-label="Désignation"><span class="designation">{{ ref.designation }}</span>
+        <span class="categorie">{{ ref.categorie.nom|default:"Sans catégorie" }}</span></td>
       {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
       <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
       {% if user.is_admin %}<td class="num" data-label="Marge unit.">{{ ref.marge_unitaire|floatformat:"2g" }} €</td>{% endif %}
@@ -40,7 +53,7 @@
             {% for pct, prix in ref.prix_soldes %}<option value="{{ pct }}">−{{ pct }} % · {{ prix|floatformat:"2g" }} €</option>{% endfor %}
           </select>
           <button class="primary" name="canal" value="magasin" title="Vente en boutique" {% if ref.quantite == 0 %}disabled{% endif %}>Vendre</button>
-          <button class="en-ligne" name="canal" value="en_ligne" title="Vente en ligne" {% if ref.quantite == 0 %}disabled{% endif %}>En ligne</button>
+          <button class="en-ligne" name="canal" value="en_ligne" title="Vente en ligne" onclick="return confirmerVenteEnLigne(this)" data-article="{{ ref.designation }}" {% if ref.quantite == 0 %}disabled{% endif %}>En ligne</button>
         </form>
       </td>
       <td class="actions">
@@ -49,9 +62,17 @@
       </td>
     </tr>
   {% empty %}
-    <tr><td colspan="7" class="muted">Aucune référence{% if q %} pour « {{ q }} »{% endif %}.</td></tr>
+    <tr><td colspan="8" class="muted">Aucune référence{% if q %} pour « {{ q }} »{% endif %}.</td></tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
+<script>
+  // Une vente en ligne s'enregistre sans écran de paiement : on demande confirmation.
+  function confirmerVenteEnLigne(bouton) {
+    var quantite = bouton.form.querySelector("[name=quantite]").value || "1";
+    return confirm("Déclarer une vente EN LIGNE ?\n\n" + quantite + " × " + bouton.dataset.article +
+                   "\n\nElle ne sera attribuée à aucune vendeuse.");
+  }
+</script>
 {% endblock %}

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core import mail
 from django.test import Client, TestCase, override_settings
 from django.urls import path, reverse
@@ -16,7 +17,7 @@ class VersionProductionTests(TestCase):
     def test_plus_de_mention_beta(self):
         self.client.force_login(User.objects.create_user("lea", password="x"))
         r = self.client.get(reverse("stock_list"))
-        self.assertContains(r, "Version 1.0.0")
+        self.assertContains(r, f"Version {settings.APP_VERSION}")
         self.assertNotContains(r, "Bêta")
 
 

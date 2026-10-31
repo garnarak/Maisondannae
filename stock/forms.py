@@ -5,18 +5,25 @@ from django import forms
 from .models import FOND_DE_CAISSE, REMISES, Ajustement, Reference, Vente
 
 
-class ReferenceForm(forms.ModelForm):
+class CategorieObligatoireMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["categorie"].required = True
+        self.fields["categorie"].empty_label = "— Choisir une catégorie —"
+
+
+class ReferenceForm(CategorieObligatoireMixin, forms.ModelForm):
     class Meta:
         model = Reference
-        fields = ["designation", "cout_achat", "prix_vente", "quantite", "active"]
+        fields = ["designation", "categorie", "cout_achat", "prix_vente", "quantite", "active"]
 
 
-class ReferenceEditForm(forms.ModelForm):
+class ReferenceEditForm(CategorieObligatoireMixin, forms.ModelForm):
     """La quantité ne se modifie pas ici : elle passe par une vente ou un ajustement tracé."""
 
     class Meta:
         model = Reference
-        fields = ["designation", "cout_achat", "prix_vente", "active"]
+        fields = ["designation", "categorie", "cout_achat", "prix_vente", "active"]
 
 
 class VenteForm(forms.Form):
