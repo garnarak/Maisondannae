@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Accueil</a> › Import / export Excel</div>{% endblock %}
+{% block content %}
+<div class="module" style="max-width: 760px">
+  <h2>Exporter</h2>
+  <div style="padding: 12px 16px">
+    <p><a class="button" href="{% url 'excel_export_stock' %}">Télécharger le stock (.xlsx)</a></p>
+    <p class="help">Toutes les références, avec catégorie, coût d'achat, prix de vente, quantité et valeur du stock.
+      Ce fichier peut être modifié puis réimporté ci-dessous.</p>
+    <form method="get" action="{% url 'excel_export_ventes' %}" style="margin-top: 20px">
+      <label>Ventes du <input type="date" name="debut" value="{{ debut }}" required></label>
+      <label>au <input type="date" name="fin" value="{{ fin }}" required></label>
+      <input type="submit" value="Télécharger les ventes (.xlsx)">
+    </form>
+    <p class="help">Une ligne par vente : date, article, prix, solde, coût, marge, canal, paiement, vendeuse.</p>
+  </div>
+</div>
+
+<div class="module" style="max-width: 760px; margin-top: 24px">
+  <h2>Importer le stock</h2>
+  <div style="padding: 12px 16px">
+    <p>Colonnes attendues (ligne de titres) : <strong>DÉSIGNATION, CATÉGORIE, COÛT D'ACHAT, PRIX DE VENTE,
+      QUANTITÉ EN STOCK</strong>, et facultativement <strong>ACTIVE</strong>. Les autres colonnes sont ignorées.</p>
+    <ul>
+      <li>Une référence qui existe déjà (même désignation) est <strong>mise à jour</strong> ; sinon elle est créée.</li>
+      <li>Une catégorie inconnue est créée automatiquement ; « - » ou vide = sans catégorie.</li>
+      <li>Les changements de quantité sont tracés comme ajustements « Import Excel ».</li>
+      <li>Rien n'est enregistré avant votre confirmation sur l'écran suivant.</li>
+    </ul>
+    <form method="post" action="{% url 'excel_import_stock' %}" enctype="multipart/form-data">{% csrf_token %}
+      <input type="file" name="fichier" accept=".xlsx" required>
+      <input type="submit" value="Vérifier le fichier">
+    </form>
+  </div>
+</div>
+{% endblock %}

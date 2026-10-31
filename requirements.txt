@@ -3,3 +3,4 @@ dj-database-url>=2.3
 psycopg[binary]>=3.2
 whitenoise>=6.9
 gunicorn>=23
+openpyxl>=3.1,<4
