@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 
 from . import services
 from .forms import AjustementForm, PaiementForm, RecuperationForm, ReferenceEditForm, ReferenceForm, VenteForm
-from .models import FOND_DE_CAISSE, RecuperationEspeces, Reference, User, Vente, prix_remise
+from .models import FOND_DE_CAISSE, Categorie, RecuperationEspeces, Reference, User, Vente, prix_remise
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
@@ -36,10 +36,23 @@ def admin_required(view):
 @login_required
 def stock_list(request):
     q = request.GET.get("q", "").strip()
-    refs = Reference.objects.filter(active=True)
+    refs = Reference.objects.filter(active=True).select_related("categorie")
     if q:
         refs = refs.filter(designation__icontains=q)
-    return render(request, "stock/stock_list.html", {"references": refs, "q": q, "vente_form": VenteForm()})
+    categorie = request.GET.get("categorie", "")
+    if categorie.isdigit():
+        refs = refs.filter(categorie_id=int(categorie))
+    return render(
+        request,
+        "stock/stock_list.html",
+        {
+            "references": refs,
+            "q": q,
+            "categorie_choisie": int(categorie) if categorie.isdigit() else None,
+            "categories": Categorie.objects.all(),
+            "vente_form": VenteForm(),
+        },
+    )
 
 
 @login_required

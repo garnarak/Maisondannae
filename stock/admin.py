@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Ajustement, RecuperationEspeces, Reference, User, Vente
+from .models import Ajustement, Categorie, RecuperationEspeces, Reference, User, Vente
 
 
 @admin.register(User)
@@ -12,10 +12,20 @@ class StockUserAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + ((None, {"fields": ["role"]}),)
 
 
+@admin.register(Categorie)
+class CategorieAdmin(admin.ModelAdmin):
+    list_display = ["nom", "nombre_de_references"]
+    search_fields = ["nom"]
+
+    @admin.display(description="références")
+    def nombre_de_references(self, obj):
+        return obj.references.count()
+
+
 @admin.register(Reference)
 class ReferenceAdmin(admin.ModelAdmin):
-    list_display = ["designation", "cout_achat", "prix_vente", "quantite", "active"]
-    list_filter = ["active"]
+    list_display = ["designation", "categorie", "cout_achat", "prix_vente", "quantite", "active"]
+    list_filter = ["active", "categorie"]
     search_fields = ["designation"]
     # La quantité passe par les ventes et ajustements pour garder une trace.
     readonly_fields = ["quantite"]
