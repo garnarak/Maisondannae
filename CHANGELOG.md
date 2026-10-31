@@ -7,6 +7,12 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.2.0 — 31/10/2026
+
+- Liste du stock : nombre d'articles en stock (et de références) pour tous les comptes
+- Administrateurs : coût d'achat total et prix de vente total du stock
+- Les totaux suivent la recherche et le filtre par catégorie
+
 ## 1.1.0 — 31/10/2026
 
 - Catégories d'articles : Veste, Pantalon, Jean, Chemise, Pull, Débardeur,

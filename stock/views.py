@@ -42,10 +42,21 @@ def stock_list(request):
     categorie = request.GET.get("categorie", "")
     if categorie.isdigit():
         refs = refs.filter(categorie_id=int(categorie))
+    valeur = ExpressionWrapper(F("quantite") * F("cout_achat"), output_field=MONEY)
+    valeur_vente = ExpressionWrapper(F("quantite") * F("prix_vente"), output_field=MONEY)
+    totaux = refs.aggregate(
+        pieces=Sum("quantite"), cout_total=Sum(valeur), vente_totale=Sum(valeur_vente), nb=Count("id")
+    )
     return render(
         request,
         "stock/stock_list.html",
         {
+            "pieces_en_stock": totaux["pieces"] or 0,
+            "nb_references": totaux["nb"],
+            # Coût d'achat et prix de vente totaux : réservés aux administrateurs.
+            "cout_total": (totaux["cout_total"] or Decimal(0)) if request.user.is_admin else None,
+            "vente_totale": (totaux["vente_totale"] or Decimal(0)) if request.user.is_admin else None,
+            "filtre_actif": bool(q or categorie.isdigit()),
             "references": refs,
             "q": q,
             "categorie_choisie": int(categorie) if categorie.isdigit() else None,

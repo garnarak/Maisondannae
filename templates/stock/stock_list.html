@@ -22,6 +22,15 @@
   {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}">+ Nouvelle référence</a>{% endif %}
 </div>
 
+<div class="kpis kpis-stock">
+  <div class="kpi accent"><span>Articles en stock{% if filtre_actif %} (sélection){% endif %}</span><strong>{{ pieces_en_stock }}</strong>
+    <small>{{ nb_references }} référence{{ nb_references|pluralize }}</small></div>
+  {% if user.is_admin %}
+  <div class="kpi"><span>Coût d'achat total</span><strong>{{ cout_total|floatformat:"2g" }} €</strong></div>
+  <div class="kpi"><span>Prix de vente total</span><strong>{{ vente_totale|floatformat:"2g" }} €</strong></div>
+  {% endif %}
+</div>
+
 <div class="table-wrap">
 <table class="stock">
   <thead>

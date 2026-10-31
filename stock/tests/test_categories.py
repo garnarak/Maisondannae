@@ -73,3 +73,47 @@ class CategoriesTests(TestCase):
         r = self.client.get(reverse("stock_list"))
         self.assertContains(r, 'onclick="return confirmerVenteEnLigne(this)"')
         self.assertContains(r, "Déclarer une vente EN LIGNE")
+
+
+class TotauxDuStockTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
+        cls.lea = User.objects.create_user("lea", password="x")
+        pull = Categorie.objects.get(nom="Pull")
+        jean = Categorie.objects.get(nom="Jean")
+        Reference.objects.create(designation="Pull angora", categorie=pull, cout_achat=Decimal("20.00"),
+                                 prix_vente=Decimal("55.00"), quantite=3)
+        Reference.objects.create(designation="Jean droit", categorie=jean, cout_achat=Decimal("30.00"),
+                                 prix_vente=Decimal("80.00"), quantite=2)
+        Reference.objects.create(designation="Ancien modèle", categorie=jean, cout_achat=Decimal("10.00"),
+                                 prix_vente=Decimal("20.00"), quantite=9, active=False)  # masqué : exclu
+        cls.jean = jean
+
+    def test_tout_le_monde_voit_le_nombre_d_articles(self):
+        for compte in (self.lea, self.admin):
+            self.client.force_login(compte)
+            r = self.client.get(reverse("stock_list"))
+            self.assertEqual(r.context["pieces_en_stock"], 5)
+            self.assertContains(r, "Articles en stock")
+
+    def test_seul_l_administrateur_voit_les_valeurs(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("stock_list"))
+        self.assertEqual(r.context["cout_total"], Decimal("120.00"))  # 3 × 20 + 2 × 30
+        self.assertEqual(r.context["vente_totale"], Decimal("325.00"))  # 3 × 55 + 2 × 80
+        self.assertContains(r, "120,00 €")
+        self.assertContains(r, "325,00 €")
+        self.client.force_login(self.lea)
+        r = self.client.get(reverse("stock_list"))
+        self.assertNotContains(r, "Coût d'achat total")
+        self.assertNotContains(r, "Prix de vente total")
+        self.assertNotContains(r, "120,00")
+        self.assertIsNone(r.context["cout_total"])
+
+    def test_les_totaux_suivent_le_filtre(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("stock_list"), {"categorie": self.jean.pk})
+        self.assertEqual(r.context["pieces_en_stock"], 2)
+        self.assertEqual(r.context["cout_total"], Decimal("60.00"))
+        self.assertContains(r, "(sélection)")
