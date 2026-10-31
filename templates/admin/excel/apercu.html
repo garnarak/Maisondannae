@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Accueil</a> › <a href="{% url 'excel_accueil' %}">Import / export Excel</a> › Vérification</div>{% endblock %}
+{% block content %}
+<h2>Vérification de « {{ nom_fichier }} »</h2>
+
+{% if analyse.erreurs %}
+  <ul class="errorlist">{% for e in analyse.erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
+  <p>Rien n'a été importé. Corrigez le fichier puis <a href="{% url 'excel_accueil' %}">déposez-le à nouveau</a>.</p>
+{% else %}
+  <p><strong>{{ analyse.lignes|length }}</strong> références lues, <strong>{{ pieces }}</strong> pièces :
+     <strong>{{ creations|length }}</strong> à créer, <strong>{{ mises_a_jour|length }}</strong> à mettre à jour,
+     {{ inchangees|length }} inchangée{{ inchangees|length|pluralize }}.</p>
+  {% if analyse.nouvelles_categories %}<p>Nouvelles catégories créées : <strong>{{ analyse.nouvelles_categories|join:", " }}</strong>.</p>{% endif %}
+  {% if analyse.avertissements %}
+    <div class="module"><h2>À vérifier ({{ analyse.avertissements|length }})</h2>
+      <ul style="padding: 8px 32px">{% for a in analyse.avertissements %}<li>{{ a }}</li>{% endfor %}</ul></div>
+  {% endif %}
+
+  <form method="post" action="{% url 'excel_import_stock' %}" style="margin: 16px 0">{% csrf_token %}
+    <input type="submit" name="confirmer" value="Confirmer l'import" class="default">
+    <a href="{% url 'excel_accueil' %}" style="margin-left: 16px">Annuler</a>
+  </form>
+
+  {% if mises_a_jour %}
+  <div class="module"><h2>Mises à jour ({{ mises_a_jour|length }})</h2>
+    <table style="width:100%"><thead><tr><th>Ligne</th><th>Désignation</th><th>Changements</th></tr></thead><tbody>
+    {% for l in mises_a_jour %}<tr><td>{{ l.numero }}</td><td>{{ l.designation }}</td><td>{{ l.details|join:" · " }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  {% endif %}
+  {% if creations %}
+  <div class="module"><h2>Créations ({{ creations|length }})</h2>
+    <table style="width:100%"><thead><tr><th>Ligne</th><th>Désignation</th><th>Catégorie</th><th>Coût</th><th>Prix</th><th>Qté</th></tr></thead><tbody>
+    {% for l in creations %}<tr><td>{{ l.numero }}</td><td>{{ l.designation }}</td><td>{{ l.categorie|default:"—" }}</td>
+      <td>{{ l.cout_achat }} €</td><td>{{ l.prix_vente }} €</td><td>{{ l.quantite }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  {% endif %}
+{% endif %}
+{% endblock %}

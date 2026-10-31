@@ -41,6 +41,17 @@ Puis ouvrir http://127.0.0.1:8000. Les autres comptes se créent dans
 
 Tests : `.venv/bin/python manage.py test`
 
+## Import / export Excel
+
+Dans **Administration → Import / export Excel** (administrateurs uniquement) :
+
+- **Exporter le stock** : un fichier au même format que l'import, modifiable puis réimportable.
+- **Exporter les ventes** d'une période : une ligne par vente (prix, solde, coût, marge, canal,
+  paiement, vendeuse).
+- **Importer le stock** : colonnes `DÉSIGNATION`, `CATÉGORIE`, `COÛT D'ACHAT`, `PRIX DE VENTE`,
+  `QUANTITÉ EN STOCK` et, facultativement, `ACTIVE`. Un écran de vérification liste les créations,
+  les mises à jour et les erreurs ; rien n'est enregistré avant la confirmation.
+
 ## Installer l'application sur un téléphone ou une tablette
 
 L'outil s'installe comme une application, avec l'icône Maison d'Annaé sur l'écran

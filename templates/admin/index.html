@@ -1,0 +1,12 @@
+{% extends "admin/index.html" %}
+{% block content %}
+{% if user.is_admin %}
+<div class="module" style="margin-bottom: 20px">
+  <table style="width:100%"><caption>Fichiers Excel</caption>
+    <tr><th scope="row"><a href="{% url 'excel_accueil' %}">Import / export Excel</a></th>
+      <td>Exporter le stock et les ventes, importer le stock</td></tr>
+  </table>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

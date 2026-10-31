@@ -7,6 +7,15 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.3.0 — 31/10/2026
+
+- Administration → « Import / export Excel » :
+  - export du stock (réimportable tel quel) et des ventes sur une période choisie ;
+  - import du stock depuis Excel, avec écran de vérification avant confirmation
+    (créations, mises à jour, erreurs, points à vérifier)
+- À l'import : référence existante mise à jour, catégorie inconnue créée automatiquement,
+  changements de quantité tracés en ajustements « Import Excel »
+
 ## 1.2.0 — 31/10/2026
 
 - Liste du stock : nombre d'articles en stock (et de références) pour tous les comptes
