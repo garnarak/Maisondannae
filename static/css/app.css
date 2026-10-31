@@ -211,3 +211,8 @@ small.paiement-detail { display: block; font-size: .78rem; }
   .search { flex: 1 1 100%; max-width: none; flex-wrap: wrap; }
   .search input, .search select { flex: 1 1 100%; max-width: none; }
 }
+
+/* Totaux du stock, au-dessus de la liste. */
+.kpis-stock { margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 340px)); }
+@media (max-width: 520px) { .kpis-stock { grid-template-columns: 1fr 1fr; } }
+.kpi small { display: block; margin-top: 4px; font-size: .8rem; opacity: .85; }
