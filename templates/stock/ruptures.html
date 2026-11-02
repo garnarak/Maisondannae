@@ -9,8 +9,8 @@
 <table>
   <thead>
     <tr>
-      <th>Désignation</th>
       <th>Catégorie</th>
+      <th>Désignation</th>
       {% if user.is_admin %}<th class="num">Coût d'achat</th>{% endif %}
       <th class="num">Prix de vente</th>
       <th>Dernière vente</th>
@@ -20,8 +20,8 @@
   <tbody>
   {% for ref in ruptures %}
     <tr>
-      <td data-label="Désignation">{{ ref.designation }}</td>
       <td data-label="Catégorie">{{ ref.categorie.nom|default:"—" }}</td>
+      <td data-label="Désignation">{{ ref.designation }}</td>
       {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
       <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
       <td data-label="Dernière vente">{% if ref.derniere_vente %}{{ ref.derniere_vente|date:"d/m/Y" }}{% else %}—{% endif %}</td>

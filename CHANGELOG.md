@@ -7,6 +7,11 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.4.1 — 02/11/2026
+
+- Stock, Rupture et Ventes : colonne « Catégorie » en premier, puis « Désignation »
+  (dans Ventes, la colonne « Référence » devient « Désignation »)
+
 ## 1.4.0 — 02/11/2026
 
 - Nouvel onglet « Rupture » : tableau des articles à 0 pièce (désignation, catégorie,
