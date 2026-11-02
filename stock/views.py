@@ -394,6 +394,7 @@ def marge(request):
     )
     for r in par_reference:
         r["taux"] = _taux(r["marge"], r["ca"])
+        r["taux_marge"] = _taux(r["marge"], r["cout"])
 
     par_canal = []
     for valeur, libelle in Vente.Canal.choices:
@@ -402,7 +403,7 @@ def marge(request):
         marge_canal = ca_canal - (t["cout"] or Decimal(0))
         par_canal.append(
             {"libelle": libelle, "pieces": t["pieces"] or 0, "ca": ca_canal, "marge": marge_canal,
-             "taux": _taux(marge_canal, ca_canal)}
+             "taux": _taux(marge_canal, ca_canal), "taux_marge": _taux(marge_canal, t["cout"] or Decimal(0))}
         )
 
     debut_historique = debut.replace(year=debut.year - 1)
@@ -418,6 +419,7 @@ def marge(request):
     )
     for h in historique:
         h["taux"] = _taux(h["marge"], h["ca"])
+        h["taux_marge"] = _taux(h["marge"], h["cout"])
 
     precedent = (debut - datetime.timedelta(days=1)).replace(day=1)
     return render(
@@ -428,7 +430,9 @@ def marge(request):
             "ca": ca,
             "cout": cout,
             "marge": ca - cout,
+            # Taux de marque = marge ÷ prix de vente ; taux de marge = marge ÷ coût d'achat.
             "taux": _taux(ca - cout, ca),
+            "taux_marge": _taux(ca - cout, cout),
             "pieces": totaux["pieces"] or 0,
             "remises": totaux["remises"] or Decimal(0),
             "pieces_soldees": totaux["pieces_soldees"] or 0,
