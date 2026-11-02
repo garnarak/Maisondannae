@@ -236,3 +236,20 @@ td.col-categorie { font-size: .72rem; letter-spacing: .1em; text-transform: uppe
 /* Nombre d'articles à côté du titre « Stock ». */
 .compte-stock { display: inline-block; margin-left: 10px; font-family: var(--sans, inherit); font-size: .9rem; font-weight: 500;
   letter-spacing: .02em; color: var(--muted); vertical-align: middle; }
+
+/* Téléphone, onglet Stock : les deux totaux côte à côte, à parts égales, et le bouton
+   « Nouvelle référence » sur la même ligne que le filtre de catégorie. */
+@media (max-width: 520px) {
+  .kpis-stock .kpi:first-child { grid-column: auto; }
+  .kpis-stock .kpi strong { font-size: 1.35rem; }
+}
+@media (max-width: 760px) {
+  .toolbar { gap: 10px; }
+  .toolbar h1 { flex: 1 1 100%; }
+  .toolbar .search { display: contents; }
+  .toolbar .search input { flex: 1 1 100%; }
+  .toolbar .search select { flex: 1 1 0; min-width: 0; }
+  .toolbar > .button { flex: 0 0 auto; }
+}
+.sur-telephone { display: none; }
+@media (max-width: 760px) { .hors-telephone { display: none; } .sur-telephone { display: inline; } }

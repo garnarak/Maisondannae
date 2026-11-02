@@ -19,7 +19,7 @@
       {% for c in categories %}<option value="{{ c.pk }}" {% if c.pk == categorie_choisie %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
     </select>
   </form>
-  {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}">+ Nouvelle référence</a>{% endif %}
+  {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}" aria-label="Nouvelle référence">+ <span class="hors-telephone">Nouvelle référence</span><span class="sur-telephone">Référence</span></a>{% endif %}
 </div>
 
 {% if user.is_admin %}

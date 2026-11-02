@@ -7,6 +7,13 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.4.3 — 02/11/2026
+
+- Téléphone, onglet Stock (administrateur) : « Coût d'achat total » et « Prix de vente
+  total » côte à côte, à parts égales
+- Téléphone, onglet Stock : bouton « Nouvelle référence » sur la même ligne que le filtre
+  de catégorie, pour que les articles apparaissent plus haut
+
 ## 1.4.2 — 02/11/2026
 
 - Stock : le nombre d'articles et de références s'affiche à côté du titre « Stock »,
