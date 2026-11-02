@@ -5,7 +5,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 
 from . import services
 from .forms import AjustementForm, PaiementForm, RecuperationForm, ReferenceEditForm, ReferenceForm, VenteForm
-from .models import FOND_DE_CAISSE, Categorie, RecuperationEspeces, Reference, User, Vente, prix_remise
+from .models import FOND_DE_CAISSE, SEUIL_STOCK_FAIBLE, Categorie, RecuperationEspeces, Reference, User, Vente, prix_remise
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
@@ -36,7 +36,8 @@ def admin_required(view):
 @login_required
 def stock_list(request):
     q = request.GET.get("q", "").strip()
-    refs = Reference.objects.filter(active=True).select_related("categorie")
+    # Les articles en rupture (0 pièce) sont dans l'onglet « Rupture », pas ici.
+    refs = Reference.objects.filter(active=True, quantite__gt=0).select_related("categorie")
     if q:
         refs = refs.filter(designation__icontains=q)
     categorie = request.GET.get("categorie", "")
@@ -61,9 +62,21 @@ def stock_list(request):
             "q": q,
             "categorie_choisie": int(categorie) if categorie.isdigit() else None,
             "categories": Categorie.objects.all(),
+            "seuil": SEUIL_STOCK_FAIBLE,
             "vente_form": VenteForm(),
         },
     )
+
+
+@login_required
+def ruptures(request):
+    refs = (
+        Reference.objects.filter(active=True, quantite=0)
+        .select_related("categorie")
+        .annotate(derniere_vente=Max("ventes__date"))
+        .order_by("categorie__nom", "designation")
+    )
+    return render(request, "stock/ruptures.html", {"ruptures": refs})
 
 
 @login_required

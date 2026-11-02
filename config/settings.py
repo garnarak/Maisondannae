@@ -8,7 +8,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Version affichée dans l'application. À mettre à jour à chaque version publiée (voir CHANGELOG.md).
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key" if DEBUG else None)
@@ -56,6 +56,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "stock.context_processors.app_version",
+                "stock.context_processors.ruptures",
             ],
         },
     },

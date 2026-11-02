@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Rupture{% endblock %}
+{% block content %}
+<h1>Rupture</h1>
+<p class="muted">Articles à 0 pièce, retirés de l'onglet Stock. Après un réassort, « Ajuster » avec le motif
+  « Réassort / réception » : l'article revient automatiquement dans le Stock.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      <th>Catégorie</th>
+      {% if user.is_admin %}<th class="num">Coût d'achat</th>{% endif %}
+      <th class="num">Prix de vente</th>
+      <th>Dernière vente</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for ref in ruptures %}
+    <tr>
+      <td data-label="Désignation">{{ ref.designation }}</td>
+      <td data-label="Catégorie">{{ ref.categorie.nom|default:"—" }}</td>
+      {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
+      <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
+      <td data-label="Dernière vente">{% if ref.derniere_vente %}{{ ref.derniere_vente|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+      <td class="actions"><a class="button" href="{% url 'ajuster' ref.pk %}">Ajuster</a></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">Aucun article en rupture.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

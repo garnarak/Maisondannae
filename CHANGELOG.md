@@ -7,6 +7,14 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.4.0 — 02/11/2026
+
+- Nouvel onglet « Rupture » : tableau des articles à 0 pièce (désignation, catégorie,
+  prix, dernière vente) avec accès à « Ajuster » pour le réassort
+- Les articles en rupture n'apparaissent plus dans l'onglet « Stock » ; ils y reviennent
+  dès que leur quantité repasse au-dessus de 0
+- Nombre d'articles en rupture affiché à côté de « Rupture » dans le menu
+
 ## 1.3.0 — 31/10/2026
 
 - Administration → « Import / export Excel » :
