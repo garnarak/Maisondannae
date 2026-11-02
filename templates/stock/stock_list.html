@@ -11,7 +11,7 @@
 {% endblock %}
 {% block content %}
 <div class="toolbar">
-  <h1>Stock</h1>
+  <h1>Stock <span class="compte-stock">{{ pieces_en_stock }} article{{ pieces_en_stock|pluralize }}{% if filtre_actif %} dans la sélection{% endif %} · {{ nb_references }} référence{{ nb_references|pluralize }}</span></h1>
   <form method="get" class="search">
     <input type="search" name="q" value="{{ q }}" placeholder="Rechercher une référence…" aria-label="Rechercher">
     <select name="categorie" aria-label="Catégorie" onchange="this.form.submit()">
@@ -22,14 +22,12 @@
   {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}">+ Nouvelle référence</a>{% endif %}
 </div>
 
+{% if user.is_admin %}
 <div class="kpis kpis-stock">
-  <div class="kpi accent"><span>Articles en stock{% if filtre_actif %} (sélection){% endif %}</span><strong>{{ pieces_en_stock }}</strong>
-    <small>{{ nb_references }} référence{{ nb_references|pluralize }}</small></div>
-  {% if user.is_admin %}
   <div class="kpi"><span>Coût d'achat total</span><strong>{{ cout_total|floatformat:"2g" }} €</strong></div>
   <div class="kpi"><span>Prix de vente total</span><strong>{{ vente_totale|floatformat:"2g" }} €</strong></div>
-  {% endif %}
 </div>
+{% endif %}
 
 <div class="table-wrap">
 <table class="stock">

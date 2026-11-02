@@ -7,6 +7,11 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.4.2 — 02/11/2026
+
+- Stock : le nombre d'articles et de références s'affiche à côté du titre « Stock »,
+  à la place de la grande case « Articles en stock » (gain de place, surtout sur téléphone)
+
 ## 1.4.1 — 02/11/2026
 
 - Stock, Rupture et Ventes : colonne « Catégorie » en premier, puis « Désignation »

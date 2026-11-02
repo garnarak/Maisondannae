@@ -96,7 +96,7 @@ class TotauxDuStockTests(TestCase):
             self.client.force_login(compte)
             r = self.client.get(reverse("stock_list"))
             self.assertEqual(r.context["pieces_en_stock"], 5)
-            self.assertContains(r, "Articles en stock")
+            self.assertContains(r, '<span class="compte-stock">5 articles · 2 références</span>', html=True)
 
     def test_seul_l_administrateur_voit_les_valeurs(self):
         self.client.force_login(self.admin)
@@ -117,4 +117,4 @@ class TotauxDuStockTests(TestCase):
         r = self.client.get(reverse("stock_list"), {"categorie": self.jean.pk})
         self.assertEqual(r.context["pieces_en_stock"], 2)
         self.assertEqual(r.context["cout_total"], Decimal("60.00"))
-        self.assertContains(r, "(sélection)")
+        self.assertContains(r, "dans la sélection")
