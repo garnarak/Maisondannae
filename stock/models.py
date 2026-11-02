@@ -7,6 +7,9 @@ from django.db import models
 from django.utils import timezone
 
 
+# À partir de combien de pièces restantes un article est signalé « stock faible ».
+SEUIL_STOCK_FAIBLE = 2
+
 # Pourcentages de solde proposés au vendeur au moment de la vente.
 REMISES = [10, 20, 30, 40, 50, 70]
 

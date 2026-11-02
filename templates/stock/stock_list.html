@@ -52,7 +52,7 @@
       {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
       <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
       {% if user.is_admin %}<td class="num" data-label="Marge unit.">{{ ref.marge_unitaire|floatformat:"2g" }} €</td>{% endif %}
-      <td class="num" data-label="Stock"><span class="qty {% if ref.quantite == 0 %}zero{% elif ref.quantite <= 2 %}low{% endif %}">{{ ref.quantite }}</span></td>
+      <td class="num" data-label="Stock"><span class="qty {% if ref.quantite == 0 %}zero{% elif ref.quantite <= seuil %}low{% endif %}">{{ ref.quantite }}</span></td>
       <td data-label="Vendre">
         <form method="post" action="{% url 'vendre' ref.pk %}" class="sell">{% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
