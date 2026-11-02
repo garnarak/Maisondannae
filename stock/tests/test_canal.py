@@ -131,3 +131,22 @@ class VentesEnLigneNonAttribueesTests(TestCase):
         self.client.force_login(self.lea)
         r = self.client.get(reverse("ventes"))
         self.assertEqual(r.context["mois"]["ca"], Decimal("210.00"))
+
+
+class TauxDeMarqueEtDeMargeTests(TestCase):
+    def test_les_deux_taux(self):
+        admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
+        robe = Reference.objects.create(designation="Robe lin", cout_achat=Decimal("40.00"),
+                                        prix_vente=Decimal("100.00"), quantite=5)
+        vendre(robe.pk, 1, admin)  # marge 60 € sur 100 € de vente et 40 € de coût
+        self.client.force_login(admin)
+        r = self.client.get(reverse("marge"))
+        self.assertEqual(r.context["taux"], Decimal("60"))  # taux de marque : 60 ÷ 100
+        self.assertEqual(r.context["taux_marge"], Decimal("150"))  # taux de marge : 60 ÷ 40
+        self.assertContains(r, "Taux de marque")
+        self.assertContains(r, "60,0 %")
+        self.assertContains(r, "150,0 %")
+        self.assertEqual(r.context["par_reference"][0]["taux_marge"], Decimal("150"))
+        self.assertEqual(r.context["historique"][0]["taux_marge"], Decimal("150"))
+        canaux = {c["libelle"]: c for c in r.context["par_canal"]}
+        self.assertEqual(canaux["Boutique"]["taux_marge"], Decimal("150"))
