@@ -281,7 +281,7 @@ def _totaux(qs):
 def ventes(request, mes_ventes=False, vendeuse=None, en_ligne=False):
     today = timezone.localdate()
     debut_mois = today.replace(day=1)
-    qs = Vente.objects.select_related("reference", "vendeur")
+    qs = Vente.objects.select_related("reference__categorie", "vendeur")
     if mes_ventes:
         qs = qs.filter(vendeur=request.user)
         titre = "Mes ventes"

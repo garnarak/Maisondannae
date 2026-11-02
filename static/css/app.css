@@ -220,3 +220,15 @@ small.paiement-detail { display: block; font-size: .78rem; }
 /* Compteur d'articles en rupture dans le menu. */
 .compteur { display: inline-block; min-width: 1.6em; margin-left: 4px; padding: 0 6px; border-radius: 999px;
   background: var(--accent); color: var(--accent-text); font-size: .7rem; letter-spacing: 0; text-align: center; line-height: 1.6; }
+
+/* Stock sur grand écran avec la colonne Catégorie en premier : on gagne encore un peu
+   de place pour éviter la barre de défilement de la version administrateur. */
+td.col-categorie { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-text); }
+@media (min-width: 1181px) {
+  table.stock th, table.stock td { padding-left: 6px; padding-right: 6px; }
+  table.stock th { white-space: normal; }
+  table.stock .sell input { width: 50px; }
+  table.stock .sell select { width: 8em; }
+  table.stock .sell button { padding-left: 11px; padding-right: 11px; }
+  table.stock td.actions .button { padding: 8px 10px; }
+}

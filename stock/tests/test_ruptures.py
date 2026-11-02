@@ -58,5 +58,13 @@ class RupturesTests(TestCase):
         self.client.force_login(self.admin)
         self.assertContains(self.client.get(reverse("ruptures")), "Coût d'achat")
 
+    def test_categorie_avant_designation(self):
+        self.client.force_login(self.lea)
+        for url in ("ruptures", "ventes"):
+            html = self.client.get(reverse(url)).content.decode()
+            self.assertLess(html.index("<th>Catégorie</th>"), html.index("<th>Désignation</th>"), url)
+        html = self.client.get(reverse("ventes")).content.decode()
+        self.assertIn('<td data-label="Catégorie">Pull</td>', html)
+
     def test_connexion_obligatoire(self):
         self.assertEqual(self.client.get(reverse("ruptures")).status_code, 302)
