@@ -28,6 +28,8 @@ class CategoriesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Reference.objects.exists())
         self.assertContains(r, "Choisir une catégorie")
+        html = r.content.decode()
+        self.assertLess(html.index('name="categorie"'), html.index('name="designation"'))
         self.client.post(reverse("reference_create"), {**donnees, "categorie": self.pull.pk})
         self.assertEqual(Reference.objects.get().categorie, self.pull)
 

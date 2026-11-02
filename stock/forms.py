@@ -15,7 +15,7 @@ class CategorieObligatoireMixin:
 class ReferenceForm(CategorieObligatoireMixin, forms.ModelForm):
     class Meta:
         model = Reference
-        fields = ["designation", "categorie", "cout_achat", "prix_vente", "quantite", "active"]
+        fields = ["categorie", "designation", "cout_achat", "prix_vente", "quantite", "active"]
 
 
 class ReferenceEditForm(CategorieObligatoireMixin, forms.ModelForm):
@@ -23,7 +23,7 @@ class ReferenceEditForm(CategorieObligatoireMixin, forms.ModelForm):
 
     class Meta:
         model = Reference
-        fields = ["designation", "categorie", "cout_achat", "prix_vente", "active"]
+        fields = ["categorie", "designation", "cout_achat", "prix_vente", "active"]
 
 
 class VenteForm(forms.Form):

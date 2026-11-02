@@ -11,6 +11,7 @@ Le suffixe `-beta` indique une version de test.
 
 - Stock : le nombre d'articles et de références s'affiche à côté du titre « Stock »,
   à la place de la grande case « Articles en stock » (gain de place, surtout sur téléphone)
+- Nouvelle référence et Modifier : le champ « Catégorie » vient avant « Désignation »
 
 ## 1.4.1 — 02/11/2026
 
