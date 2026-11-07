@@ -2,28 +2,42 @@ from decimal import Decimal
 
 from django import forms
 
-from .models import FOND_DE_CAISSE, REMISES, Ajustement, Reference, Vente
+from .models import FOND_DE_CAISSE, REMISES, Ajustement, Couleur, Modele, Taille, Vente
 
 
-class CategorieObligatoireMixin:
+class ModeleForm(forms.ModelForm):
+    class Meta:
+        model = Modele
+        fields = ["categorie", "nom", "cout_achat", "prix_vente", "active"]
+        labels = {"nom": "Désignation", "active": "Actif"}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["categorie"].required = True
         self.fields["categorie"].empty_label = "— Choisir une catégorie —"
 
 
-class ReferenceForm(CategorieObligatoireMixin, forms.ModelForm):
-    class Meta:
-        model = Reference
-        fields = ["categorie", "designation", "cout_achat", "prix_vente", "quantite", "active"]
+class VariantesForm(forms.Form):
+    tailles = forms.MultipleChoiceField(
+        choices=Taille.choices, widget=forms.CheckboxSelectMultiple, required=False,
+        help_text="« Taille unique » pour un article sans taille.",
+    )
+    couleurs = forms.ModelMultipleChoiceField(
+        queryset=Couleur.objects.all(), widget=forms.CheckboxSelectMultiple, required=False,
+        help_text="Aucune couleur cochée : une seule variante par taille, sans couleur.",
+    )
 
+    def __init__(self, *args, obligatoire=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.obligatoire = obligatoire
 
-class ReferenceEditForm(CategorieObligatoireMixin, forms.ModelForm):
-    """La quantité ne se modifie pas ici : elle passe par une vente ou un ajustement tracé."""
-
-    class Meta:
-        model = Reference
-        fields = ["categorie", "designation", "cout_achat", "prix_vente", "active"]
+    def clean_tailles(self):
+        tailles = self.cleaned_data["tailles"]
+        if Taille.TU in tailles and len(tailles) > 1:
+            raise forms.ValidationError("« Taille unique » ne se combine pas avec d'autres tailles.")
+        if self.obligatoire and not tailles:
+            raise forms.ValidationError("Cochez au moins une taille (ou « Taille unique »).")
+        return tailles
 
 
 class VenteForm(forms.Form):

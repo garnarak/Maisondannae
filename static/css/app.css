@@ -253,3 +253,26 @@ td.col-categorie { font-size: .72rem; letter-spacing: .1em; text-transform: uppe
 }
 .sur-telephone { display: none; }
 @media (max-width: 760px) { .hors-telephone { display: none; } .sur-telephone { display: inline; } }
+
+/* Modèles et variantes */
+.formulaire-modele { max-width: 620px; margin: 24px auto; }
+.formulaire-modele h2, .sous-section { font-size: 1.25rem; margin: 28px 0 4px; }
+fieldset.pastilles { border: 0; padding: 0; margin: 14px 0 0; }
+fieldset.pastilles legend { font-weight: 500; font-size: .9rem; padding: 0; margin-bottom: 8px; }
+.pastilles-choix { display: flex; flex-wrap: wrap; gap: 8px; }
+label.pastille { margin: 0; display: inline-flex; align-items: center; cursor: pointer; }
+label.pastille input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+label.pastille span { display: inline-block; padding: 8px 16px; min-height: 40px; line-height: 24px; border: 1px solid var(--border-strong);
+  border-radius: 999px; background: var(--surface); font-weight: 400; }
+label.pastille input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+label.pastille input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.grid2.modele { grid-template-columns: minmax(280px, 1fr) minmax(0, 1.6fr); align-items: start; }
+table.variantes input { width: 72px; text-align: center; padding: 8px 6px; min-height: 40px; }
+table.variantes code { font-size: .78rem; color: var(--muted); }
+.variante { display: block; margin-top: 2px; font-size: .78rem; letter-spacing: .06em; color: var(--accent); font-weight: 500; }
+.card h2.sous-section { margin-top: 32px; }
+/* Cartes (tablette et téléphone) : taille · couleur sous le nom, alignée à droite comme lui. */
+@media (max-width: 1180px) {
+  td[data-label="Désignation"] { flex-wrap: wrap; }
+  td[data-label="Désignation"] .variante { flex-basis: 100%; text-align: right; margin-top: 0; }
+}

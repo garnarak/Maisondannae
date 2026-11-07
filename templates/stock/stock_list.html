@@ -19,7 +19,7 @@
       {% for c in categories %}<option value="{{ c.pk }}" {% if c.pk == categorie_choisie %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
     </select>
   </form>
-  {% if user.is_admin %}<a class="button primary" href="{% url 'reference_create' %}" aria-label="Nouvelle référence">+ <span class="hors-telephone">Nouvelle référence</span><span class="sur-telephone">Référence</span></a>{% endif %}
+  {% if user.is_admin %}<a class="button primary" href="{% url 'modele_create' %}" aria-label="Nouveau modèle">+ <span class="hors-telephone">Nouveau modèle</span><span class="sur-telephone">Modèle</span></a>{% endif %}
 </div>
 
 {% if user.is_admin %}
@@ -47,7 +47,8 @@
   {% for ref in references %}
     <tr>
       <td data-label="Catégorie" class="col-categorie">{{ ref.categorie.nom|default:"—" }}</td>
-      <td data-label="Désignation"><span class="designation">{{ ref.designation }}</span></td>
+      <td data-label="Désignation"><span class="designation">{{ ref.modele.nom|default:ref.designation }}</span>
+        {% if not ref.est_unique %}<span class="variante">{{ ref.libelle_variante }}</span>{% endif %}</td>
       {% if user.is_admin %}<td class="num" data-label="Coût d'achat">{{ ref.cout_achat|floatformat:"2g" }} €</td>{% endif %}
       <td class="num" data-label="Prix de vente">{{ ref.prix_vente|floatformat:"2g" }} €</td>
       {% if user.is_admin %}<td class="num" data-label="Marge unit.">{{ ref.marge_unitaire|floatformat:"2g" }} €</td>{% endif %}
@@ -66,7 +67,7 @@
       </td>
       <td class="actions">
         <a class="button" href="{% url 'ajuster' ref.pk %}">Ajuster</a>
-        {% if user.is_admin %}<a class="button" href="{% url 'reference_edit' ref.pk %}">Modifier</a>{% endif %}
+        {% if user.is_admin %}<a class="button" href="{% url 'modele_edit' ref.modele_id %}">Modifier</a>{% endif %}
       </td>
     </tr>
   {% empty %}
