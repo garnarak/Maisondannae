@@ -5,7 +5,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum
+from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum, When
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,8 +13,8 @@ from django.utils import formats, timezone
 from django.views.decorators.http import require_POST
 
 from . import services
-from .forms import AjustementForm, PaiementForm, RecuperationForm, ReferenceEditForm, ReferenceForm, VenteForm
-from .models import FOND_DE_CAISSE, SEUIL_STOCK_FAIBLE, Categorie, RecuperationEspeces, Reference, User, Vente, prix_remise
+from .forms import AjustementForm, ModeleForm, PaiementForm, RecuperationForm, VariantesForm, VenteForm
+from .models import FOND_DE_CAISSE, ORDRE_TAILLES, SEUIL_STOCK_FAIBLE, Categorie, Modele, Taille, RecuperationEspeces, Reference, User, Vente, prix_remise
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
 CA = ExpressionWrapper(F("prix_unitaire") * F("quantite"), output_field=MONEY)
@@ -37,7 +37,13 @@ def admin_required(view):
 def stock_list(request):
     q = request.GET.get("q", "").strip()
     # Les articles en rupture (0 pièce) sont dans l'onglet « Rupture », pas ici.
-    refs = Reference.objects.filter(active=True, quantite__gt=0).select_related("categorie")
+    refs = (
+        Reference.objects.filter(active=True, quantite__gt=0)
+        .select_related("categorie", "couleur", "modele")
+        # Variantes d'un même modèle regroupées, tailles dans l'ordre XS → XXL.
+        .annotate(ordre_taille=Case(*[When(taille=t, then=i) for t, i in ORDRE_TAILLES.items()], default=99))
+        .order_by("modele__nom", "ordre_taille", "couleur__nom")
+    )
     if q:
         refs = refs.filter(designation__icontains=q)
     categorie = request.GET.get("categorie", "")
@@ -243,24 +249,69 @@ def ajuster(request, pk):
 
 
 @admin_required
-def reference_create(request):
-    form = ReferenceForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        ref = form.save()
-        messages.success(request, f"Référence « {ref} » créée.")
-        return redirect("stock_list")
-    return render(request, "stock/reference_form.html", {"form": form, "titre": "Nouvelle référence"})
+def modele_create(request):
+    form = ModeleForm(request.POST or None)
+    variantes_form = VariantesForm(request.POST or None, initial={"tailles": [Taille.TU]})
+    if request.method == "POST" and form.is_valid() and variantes_form.is_valid():
+        d = form.cleaned_data
+        modele = services.creer_modele(
+            d["nom"], d["categorie"], d["cout_achat"], d["prix_vente"],
+            variantes_form.cleaned_data["tailles"], list(variantes_form.cleaned_data["couleurs"]),
+        )
+        messages.success(
+            request, f"Modèle « {modele} » créé avec {modele.variantes.count()} variante(s). Indiquez les quantités reçues."
+        )
+        return redirect("modele_edit", pk=modele.pk)
+    return render(request, "stock/modele_form.html", {"form": form, "variantes_form": variantes_form})
+
+
+@admin_required
+def modele_edit(request, pk):
+    modele = get_object_or_404(Modele, pk=pk)
+    action = request.POST.get("action") if request.method == "POST" else None
+    form = ModeleForm(request.POST if action == "modele" else None, instance=modele)
+    variantes_form = VariantesForm(request.POST if action == "variantes" else None, obligatoire=False)
+    variantes = list(modele.variantes.select_related("couleur"))
+    variantes.sort(key=lambda v: (ORDRE_TAILLES.get(v.taille, 99), v.couleur.nom if v.couleur else ""))
+
+    if action == "modele" and form.is_valid():
+        form.save()
+        messages.success(request, f"Modèle « {modele} » enregistré.")
+        return redirect("modele_edit", pk=modele.pk)
+    if action == "variantes" and variantes_form.is_valid():
+        tailles, couleurs = variantes_form.cleaned_data["tailles"], list(variantes_form.cleaned_data["couleurs"])
+        if not tailles:  # couleurs ajoutées aux tailles déjà présentes
+            tailles = sorted({v.taille for v in variantes}, key=lambda t: ORDRE_TAILLES.get(t, 99))
+        n = services.ajouter_variantes(modele, tailles, couleurs)
+        messages.success(request, f"{n} variante(s) ajoutée(s)." if n else "Ces variantes existent déjà.")
+        return redirect("modele_edit", pk=modele.pk)
+    if action == "entree":
+        quantites, erreur = {}, False
+        for v in variantes:
+            brut = request.POST.get(f"q_{v.pk}", "").strip()
+            if brut:
+                if not brut.isdigit():
+                    erreur = True
+                    continue
+                quantites[v.pk] = int(brut)
+        if erreur:
+            messages.error(request, "Les quantités doivent être des nombres entiers positifs.")
+        else:
+            total = services.entree_en_stock(quantites, request.user)
+            messages.success(request, f"{total} pièce(s) entrée(s) en stock." if total else "Aucune quantité saisie.")
+            return redirect("modele_edit", pk=modele.pk)
+
+    return render(request, "stock/modele_edit.html", {
+        "modele": modele, "form": form, "variantes_form": variantes_form, "variantes": variantes,
+        "total": sum(v.quantite for v in variantes),
+    })
 
 
 @admin_required
 def reference_edit(request, pk):
+    """Ancienne adresse « Modifier » d'une référence : mène à son modèle."""
     ref = get_object_or_404(Reference, pk=pk)
-    form = ReferenceEditForm(request.POST or None, instance=ref)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, f"Référence « {ref} » modifiée.")
-        return redirect("stock_list")
-    return render(request, "stock/reference_form.html", {"form": form, "titre": f"Modifier « {ref} »", "ref": ref})
+    return redirect("modele_edit", pk=ref.modele_id)
 
 
 def _totaux(qs):
@@ -414,7 +465,7 @@ def marge(request):
     cout = totaux["cout"] or Decimal(0)
 
     par_reference = (
-        ventes_mois.values("reference__designation")
+        ventes_mois.values("reference__modele__nom")
         .annotate(pieces=Sum("quantite"), ca=Sum(CA), cout=Sum(COUT))
         .annotate(marge=ExpressionWrapper(F("ca") - F("cout"), output_field=MONEY))
         .order_by("-marge")

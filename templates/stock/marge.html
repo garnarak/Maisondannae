@@ -43,12 +43,12 @@
 <h2>Articles les plus rentables du mois</h2>
 <div class="table-wrap">
 <table>
-  <thead><tr><th>#</th><th>Référence</th><th class="num">Pièces</th><th class="num">CA</th><th class="num">Marge</th><th class="num">Taux de marque</th><th class="num">Taux de marge</th></tr></thead>
+  <thead><tr><th>#</th><th>Modèle</th><th class="num">Pièces</th><th class="num">CA</th><th class="num">Marge</th><th class="num">Taux de marque</th><th class="num">Taux de marge</th></tr></thead>
   <tbody>
   {% for r in par_reference %}
     <tr>
       <td data-label="#"><span class="rank">{{ forloop.counter }}</span></td>
-      <td data-label="Référence">{{ r.reference__designation }}</td>
+      <td data-label="Référence">{{ r.reference__modele__nom }}</td>
       <td class="num" data-label="Pièces">{{ r.pieces }}</td>
       <td class="num" data-label="CA">{{ r.ca|floatformat:"2g" }} €</td>
       <td class="num" data-label="Marge"><strong>{{ r.marge|floatformat:"2g" }} €</strong></td>

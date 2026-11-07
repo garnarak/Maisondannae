@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ modele }}{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'stock_list' %}">← Retour au stock</a>
+<h1>{{ modele }} <span class="compte-stock">{{ total }} pièce{{ total|pluralize }} · {{ variantes|length }} variante{{ variantes|length|pluralize }}</span></h1>
+
+<div class="grid2 modele">
+  <section class="card">
+    <h2>Modèle</h2>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="modele">
+      {% include "stock/_champs.html" with form=form %}
+      <button class="primary block">Enregistrer</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Variantes et entrée en stock</h2>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="entree">
+      <div class="table-wrap">
+      <table class="variantes">
+        <thead><tr><th>Taille</th><th>Couleur</th><th>SKU</th><th class="num">Stock</th><th class="num">Reçu</th><th></th></tr></thead>
+        <tbody>
+        {% for v in variantes %}
+          <tr>
+            <td data-label="Taille">{{ v.get_taille_display }}</td>
+            <td data-label="Couleur">{{ v.couleur.nom|default:"—" }}</td>
+            <td data-label="SKU"><code>{{ v.sku }}</code></td>
+            <td class="num" data-label="Stock"><span class="qty {% if v.quantite == 0 %}zero{% elif v.quantite <= 2 %}low{% endif %}">{{ v.quantite }}</span></td>
+            <td class="num" data-label="Reçu"><input type="number" name="q_{{ v.pk }}" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Pièces reçues, {{ v.libelle_variante }}"></td>
+            <td class="actions"><a class="button" href="{% url 'ajuster' v.pk %}">Ajuster</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      <small class="muted">« Reçu » : nombre de pièces réceptionnées, ajouté au stock (motif « Réassort »). Pour une casse ou une correction, utilisez « Ajuster ».</small>
+      <button class="primary block">Enregistrer l'entrée en stock</button>
+    </form>
+
+    <h2 class="sous-section">Ajouter des tailles ou des couleurs</h2>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="variantes">
+      {% include "stock/_champs.html" with form=variantes_form %}
+      <small class="muted">Cocher seulement des couleurs les ajoute à toutes les tailles existantes.</small>
+      <button class="block">Ajouter les variantes</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

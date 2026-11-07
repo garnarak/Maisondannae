@@ -1,0 +1,18 @@
+{# Affiche les champs d'un formulaire : cases à cocher multiples en pastilles, le reste en libellé + champ. #}
+{{ form.non_field_errors }}
+{% for field in form %}
+  {% if field.field.widget.input_type == "checkbox" and not field.field.widget.allow_multiple_selected %}
+  <label class="check">{{ field }} {{ field.label }}</label>
+  {% elif field.field.widget.allow_multiple_selected %}
+  <fieldset class="pastilles">
+    <legend>{{ field.label }}</legend>
+    <div class="pastilles-choix">
+      {% for case in field %}<label class="pastille">{{ case.tag }}<span>{{ case.choice_label }}</span></label>{% endfor %}
+    </div>
+  </fieldset>
+  {% else %}
+  <label>{{ field.label }} {{ field }}</label>
+  {% endif %}
+  {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+  {% for e in field.errors %}<div class="error">{{ e }}</div>{% endfor %}
+{% endfor %}

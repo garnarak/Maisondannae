@@ -22,26 +22,26 @@ class CategoriesTests(TestCase):
 
     def test_categorie_obligatoire_a_la_creation(self):
         self.client.force_login(self.admin)
-        donnees = {"designation": "Pull col roulé", "cout_achat": "20", "prix_vente": "50", "quantite": "3",
-                   "active": "on"}
-        r = self.client.post(reverse("reference_create"), donnees)
+        donnees = {"nom": "Pull col roulé", "cout_achat": "20", "prix_vente": "50", "tailles": ["TU"]}
+        r = self.client.post(reverse("modele_create"), donnees)
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Reference.objects.exists())
         self.assertContains(r, "Choisir une catégorie")
         html = r.content.decode()
-        self.assertLess(html.index('name="categorie"'), html.index('name="designation"'))
-        self.client.post(reverse("reference_create"), {**donnees, "categorie": self.pull.pk})
+        self.assertLess(html.index('name="categorie"'), html.index('name="nom"'))
+        self.client.post(reverse("modele_create"), {**donnees, "categorie": self.pull.pk})
         self.assertEqual(Reference.objects.get().categorie, self.pull)
 
     def test_modifier_la_categorie(self):
         ref = Reference.objects.create(designation="Slim brut", categorie=self.pull, cout_achat=Decimal("20"),
                                        prix_vente=Decimal("60"), quantite=2)
         self.client.force_login(self.admin)
-        r = self.client.get(reverse("reference_edit", args=[ref.pk]))
+        # L'ancienne adresse « Modifier » d'un article mène à la page de son modèle.
+        r = self.client.get(reverse("reference_edit", args=[ref.pk]), follow=True)
         self.assertContains(r, 'name="categorie"')
-        self.client.post(reverse("reference_edit", args=[ref.pk]), {
-            "designation": "Slim brut", "categorie": self.jean.pk, "cout_achat": "20", "prix_vente": "60",
-            "active": "on",
+        self.client.post(reverse("modele_edit", args=[ref.modele_id]), {
+            "action": "modele", "nom": "Slim brut", "categorie": self.jean.pk, "cout_achat": "20",
+            "prix_vente": "60", "active": "on",
         })
         ref.refresh_from_db()
         self.assertEqual(ref.categorie, self.jean)

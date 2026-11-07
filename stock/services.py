@@ -4,7 +4,10 @@ from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 
-from .models import FOND_DE_CAISSE, REMISES, Ajustement, CorrectionPaiement, RecuperationEspeces, Reference, Vente, prix_remise
+from .models import (
+    FOND_DE_CAISSE, REMISES, Ajustement, CorrectionPaiement, Modele, RecuperationEspeces, Reference,
+    Taille, Vente, prix_remise,
+)
 
 
 class StockInsuffisant(Exception):
@@ -136,3 +139,37 @@ def corriger_paiement(vente_id, paiement, montant_especes, administrateur):
     vente.save(update_fields=["paiement", "montant_especes"])
     derniere = derniere_recuperation()
     return vente, bool(derniere and derniere.date >= vente.date)
+
+
+@transaction.atomic
+def ajouter_variantes(modele, tailles, couleurs):
+    """Crée les variantes taille × couleur qui n'existent pas encore. Sans couleur choisie,
+    une variante par taille, sans couleur. Renvoie le nombre de variantes créées."""
+    existantes = {(v.taille, v.couleur_id) for v in modele.variantes.all()}
+    creees = 0
+    for taille in sorted(tailles, key=lambda t: Taille.values.index(t)):
+        for couleur in (couleurs or [None]):
+            cle = (taille, couleur.pk if couleur else None)
+            if cle not in existantes:
+                Reference.objects.create(modele=modele, taille=taille, couleur=couleur, quantite=0)
+                existantes.add(cle)
+                creees += 1
+    return creees
+
+
+@transaction.atomic
+def creer_modele(nom, categorie, cout_achat, prix_vente, tailles, couleurs):
+    modele = Modele.objects.create(nom=nom, categorie=categorie, cout_achat=cout_achat, prix_vente=prix_vente)
+    ajouter_variantes(modele, tailles, couleurs)
+    return modele
+
+
+@transaction.atomic
+def entree_en_stock(quantites, utilisateur, motif=Ajustement.Motif.REASSORT):
+    """quantites : {variante_id: nombre de pièces reçues}. Chaque entrée est tracée en ajustement."""
+    total = 0
+    for variante_id, nombre in quantites.items():
+        if nombre:
+            ajuster_stock(variante_id, nombre, motif, utilisateur, "Entrée en stock")
+            total += nombre
+    return total

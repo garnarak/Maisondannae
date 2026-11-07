@@ -7,6 +7,21 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.5.0 — non publiée
+
+- Modèles et variantes : un modèle (nom, catégorie, coût, prix) se décline en variantes
+  de taille (TU, XS, S, M, L, XL, XXL) et de couleur ; chaque variante a son stock et son SKU
+- « Nouveau modèle » : les tailles et couleurs cochées créent toutes les variantes d'un coup
+- Page du modèle (bouton « Modifier ») : prix et coût communs, entrée en stock de toutes les
+  variantes en une fois, ajout de tailles ou de couleurs
+- Couleurs choisies dans une liste, modifiable dans Administration → Couleurs
+- Stock : variantes regroupées par modèle, de la plus petite à la plus grande taille, avec
+  « taille · couleur » sous le nom ; Rupture et Ventes indiquent la variante
+- Marge : articles les plus rentables regroupés par modèle
+- Excel : une ligne par variante (colonnes MODÈLE, TAILLE, COULEUR, SKU) ; les anciens fichiers
+  sans taille s'importent toujours
+- Les articles existants deviennent des modèles à taille unique, sans perte de données
+
 ## 1.4.3 — 11/11/2026
 
 - Téléphone, onglet Stock (administrateur) : « Coût d'achat total » et « Prix de vente
