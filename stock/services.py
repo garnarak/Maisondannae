@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 
-from .models import FOND_DE_CAISSE, REMISES, Ajustement, RecuperationEspeces, Reference, Vente, prix_remise
+from .models import FOND_DE_CAISSE, REMISES, Ajustement, CorrectionPaiement, RecuperationEspeces, Reference, Vente, prix_remise
 
 
 class StockInsuffisant(Exception):
@@ -114,3 +114,25 @@ def recuperer_especes(administrateur, fond_laisse=FOND_DE_CAISSE):
         fond_laisse=fond_laisse,
         montant_recupere=en_caisse - fond_laisse,
     )
+
+
+@transaction.atomic
+def corriger_paiement(vente_id, paiement, montant_especes, administrateur):
+    """Change le mode de paiement d'une vente en boutique sans toucher à sa date, sa vendeuse,
+    son article ni son prix. Renvoie (vente, caisse_deja_videe) : le second indique que des
+    espèces ont été récupérées depuis la vente, donc que le montant en caisse change."""
+    if not getattr(administrateur, "is_admin", False):
+        raise PermissionError("Seul un administrateur peut corriger un paiement.")
+    vente = Vente.objects.select_for_update().get(pk=vente_id)
+    if vente.canal != Vente.Canal.MAGASIN:
+        raise PaiementInvalide("Une vente en ligne n'a pas de mode de paiement en boutique.")
+    especes = _montant_especes(vente.chiffre_affaires, paiement, montant_especes)
+    CorrectionPaiement.objects.create(
+        vente=vente, administrateur=administrateur,
+        ancien_paiement=vente.paiement, ancien_montant_especes=vente.montant_especes,
+        nouveau_paiement=paiement, nouveau_montant_especes=especes,
+    )
+    vente.paiement, vente.montant_especes = paiement, especes
+    vente.save(update_fields=["paiement", "montant_especes"])
+    derniere = derniere_recuperation()
+    return vente, bool(derniere and derniere.date >= vente.date)

@@ -253,3 +253,15 @@ td.col-categorie { font-size: .72rem; letter-spacing: .1em; text-transform: uppe
 }
 .sur-telephone { display: none; }
 @media (max-width: 760px) { .hors-telephone { display: none; } .sur-telephone { display: inline; } }
+
+/* Correction du paiement d'une vente */
+.msg-warning { background: var(--gold-soft); color: var(--gold-text); }
+.recap-vente { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 12px 0; }
+.recap-vente dt { color: var(--muted); }
+.recap-vente dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+td.actions form { display: inline; }
+/* Cartes (tablette et téléphone) : le mode de paiement passe sous le total, aligné à droite. */
+@media (max-width: 760px) {
+  .table-wrap td[data-label="Total"] { flex-wrap: wrap; }
+  .table-wrap td[data-label="Total"] small.paiement-detail { flex-basis: 100%; text-align: right; }
+}

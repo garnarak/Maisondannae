@@ -347,6 +347,33 @@ def ventes_vendeuse(request, pk):
 
 
 @admin_required
+def corriger_paiement(request, pk):
+    vente = get_object_or_404(Vente.objects.select_related("reference", "vendeur"), pk=pk, canal=Vente.Canal.MAGASIN)
+    erreur = None
+    if request.method == "POST":
+        try:
+            montant = request.POST.get("montant_especes", "").strip().replace(",", ".")
+            montant = Decimal(montant) if montant else None
+            vente, caisse_deja_videe = services.corriger_paiement(
+                vente.pk, request.POST.get("paiement", ""), montant, request.user
+            )
+        except (services.PaiementInvalide, ArithmeticError) as e:
+            erreur = str(e) if isinstance(e, services.PaiementInvalide) else "Montant en espèces invalide."
+        else:
+            messages.success(request, f"Paiement corrigé : {vente.reference} — {vente.get_paiement_display()}.")
+            if caisse_deja_videe:
+                messages.warning(
+                    request,
+                    "Des espèces ont été récupérées depuis cette vente : le montant théorique en caisse a changé. "
+                    "Vérifiez la caisse.",
+                )
+            return redirect(request.POST.get("next") or "ventes")
+    return render(request, "stock/corriger_paiement.html", {
+        "vente": vente, "erreur": erreur, "next": request.GET.get("next") or request.POST.get("next", ""),
+    })
+
+
+@admin_required
 @require_POST
 def annuler_vente(request, pk):
     vente = get_object_or_404(Vente, pk=pk)

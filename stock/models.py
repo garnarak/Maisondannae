@@ -205,3 +205,20 @@ class RecuperationEspeces(models.Model):
 
     def __str__(self):
         return f"{self.montant_recupere} € le {timezone.localtime(self.date):%d/%m/%Y %H:%M}"
+
+
+class CorrectionPaiement(models.Model):
+    """Trace d'une correction du mode de paiement d'une vente par un administrateur."""
+
+    vente = models.ForeignKey(Vente, on_delete=models.CASCADE, related_name="corrections_paiement")
+    date = models.DateTimeField(default=timezone.now)
+    administrateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    ancien_paiement = models.CharField(max_length=10, choices=Vente.Paiement.choices, blank=True)
+    ancien_montant_especes = models.DecimalField(max_digits=10, decimal_places=2)
+    nouveau_paiement = models.CharField(max_length=10, choices=Vente.Paiement.choices)
+    nouveau_montant_especes = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "correction de paiement"
+        verbose_name_plural = "corrections de paiement"
