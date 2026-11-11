@@ -15,6 +15,7 @@
   <td data-label="Vendeur">{% if v.vendeur %}{{ v.vendeur.get_short_name|default:v.vendeur.username }}{% else %}<span class="muted">—</span>{% endif %}</td>
   {% if user.is_admin %}
   <td>
+    {% if v.canal == "magasin" %}<a class="button" href="{% url 'corriger_paiement' v.pk %}?next={{ request.get_full_path|urlencode }}">Paiement</a>{% endif %}
     <form method="post" action="{% url 'annuler_vente' v.pk %}" onsubmit="return confirm('Annuler cette vente et remettre l\'article en stock ?')">{% csrf_token %}
       <button class="danger">Annuler</button>
     </form>

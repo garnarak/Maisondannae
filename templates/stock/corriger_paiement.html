@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Corriger le paiement{% endblock %}
+{% block content %}
+<p><a href="{{ next|default:'/ventes/' }}">← Retour aux ventes, sans rien changer</a></p>
+<div class="card narrow paiement">
+  <h1>Corriger le paiement</h1>
+  <p class="lead">{{ vente.quantite }} × {{ vente.reference }}</p>
+  <dl class="recap-vente">
+    <dt>Vente du</dt><dd>{{ vente.date|date:"d/m/Y à H:i" }}</dd>
+    <dt>Vendeuse</dt><dd>{{ vente.vendeur.get_short_name|default:vente.vendeur.username|default:"—" }}</dd>
+    <dt>Total</dt><dd><strong>{{ vente.chiffre_affaires|floatformat:"2g" }} €</strong></dd>
+    <dt>Paiement actuel</dt><dd>{% if vente.paiement == "mixte" %}{{ vente.montant_especes|floatformat:"2g" }} € esp. + {{ vente.montant_cb|floatformat:"2g" }} € CB{% else %}{{ vente.get_paiement_display|default:"non renseigné" }}{% endif %}</dd>
+  </dl>
+  <p class="muted">La date, la vendeuse, l'article et le prix ne changent pas. La correction est enregistrée dans l'administration.</p>
+  {% if erreur %}<div class="msg msg-error" role="alert">{{ erreur }}</div>{% endif %}
+
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="choix-paiement">
+      <button class="primary" name="paiement" value="especes">Espèces · {{ vente.chiffre_affaires|floatformat:"2g" }} €</button>
+      <button class="primary" name="paiement" value="cb">Carte bancaire</button>
+    </div>
+  </form>
+
+  <form method="post" class="mixte">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <h2>Espèces + carte bancaire</h2>
+    <label>Montant payé en espèces (€)
+      <input type="number" name="montant_especes" step="0.01" min="0.01" inputmode="decimal" required>
+    </label>
+    <small class="muted">Le reste du total est payé par carte bancaire.</small>
+    <button class="block" name="paiement" value="mixte">Valider espèces + CB</button>
+  </form>
+</div>
+{% endblock %}

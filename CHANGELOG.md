@@ -7,6 +7,18 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 1.4.3 — 11/11/2026
+
+- Téléphone, onglet Stock (administrateur) : « Coût d'achat total » et « Prix de vente
+  total » côte à côte, à parts égales
+- Téléphone, onglet Stock : bouton « Nouvelle référence » sur la même ligne que le filtre
+  de catégorie, pour que les articles apparaissent plus haut
+- Ventes (administrateurs) : bouton « Paiement » pour corriger le mode de paiement d'une
+  vente en boutique, sans changer sa date, sa vendeuse, son article ni son prix ; la caisse
+  et le suivi espèces / CB se mettent à jour, et chaque correction est tracée dans
+  Administration → Corrections de paiement
+- Téléphone, Ventes : le mode de paiement s'affiche sous le total, aligné à droite
+
 ## 1.4.2 — 02/11/2026
 
 - Stock : le nombre d'articles et de références s'affiche à côté du titre « Stock »,

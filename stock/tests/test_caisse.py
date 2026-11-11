@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from stock import services
-from stock.models import RecuperationEspeces, Reference, User, Vente
+from stock.models import CorrectionPaiement, RecuperationEspeces, Reference, User, Vente
 
 
 class PaiementTests(TestCase):
@@ -143,3 +143,55 @@ class CaisseTests(TestCase):
         self.assertEqual(mois["especes"], Decimal("110.00"))
         self.assertEqual(mois["cb"], Decimal("90.00"))
         self.assertEqual(mois["recupere"], Decimal("110.00"))
+
+
+class CorrectionPaiementTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
+        cls.lea = User.objects.create_user("lea", password="x", first_name="Léa")
+        cls.robe = Reference.objects.create(
+            designation="Robe lin", cout_achat=Decimal("30.00"), prix_vente=Decimal("50.00"), quantite=20
+        )
+
+    def setUp(self):
+        self.vente = services.enregistrer_vente(self.robe.pk, 2, self.lea, paiement="cb")  # 100 € par CB
+        self.client.force_login(self.admin)
+
+    def _corriger(self, **donnees):
+        return self.client.post(reverse("corriger_paiement", args=[self.vente.pk]), donnees, follow=True)
+
+    def test_correction_en_especes(self):
+        date, en_caisse = self.vente.date, services.especes_en_caisse()
+        r = self._corriger(paiement="especes")
+        self.assertContains(r, "Paiement corrigé")
+        self.vente.refresh_from_db()
+        self.assertEqual((self.vente.paiement, self.vente.montant_especes), ("especes", Decimal("100.00")))
+        # Date, vendeuse et prix inchangés ; la caisse suit.
+        self.assertEqual((self.vente.date, self.vente.vendeur, self.vente.prix_unitaire),
+                         (date, self.lea, Decimal("50.00")))
+        self.assertEqual(services.especes_en_caisse(), en_caisse + Decimal("100.00"))
+        c = CorrectionPaiement.objects.get()
+        self.assertEqual((c.ancien_paiement, c.nouveau_paiement, c.administrateur), ("cb", "especes", self.admin))
+
+    def test_correction_mixte_et_montant_invalide(self):
+        r = self._corriger(paiement="mixte", montant_especes="150")
+        self.assertContains(r, "doit être compris entre 0 et 100")
+        self.assertFalse(CorrectionPaiement.objects.exists())
+        self._corriger(paiement="mixte", montant_especes="30,5")
+        self.vente.refresh_from_db()
+        self.assertEqual((self.vente.paiement, self.vente.montant_especes), ("mixte", Decimal("30.50")))
+
+    def test_avertissement_si_caisse_deja_videe(self):
+        services.recuperer_especes(self.admin)
+        r = self._corriger(paiement="especes")
+        self.assertContains(r, "Vérifiez la caisse")
+
+    def test_reserve_aux_administrateurs_et_aux_ventes_en_boutique(self):
+        self.client.force_login(self.lea)
+        self.assertEqual(self.client.get(reverse("corriger_paiement", args=[self.vente.pk])).status_code, 403)
+        self.assertNotContains(self.client.get(reverse("ventes")), reverse("corriger_paiement", args=[self.vente.pk]))
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get(reverse("ventes")), reverse("corriger_paiement", args=[self.vente.pk]))
+        en_ligne = services.enregistrer_vente(self.robe.pk, 1, self.lea, canal=Vente.Canal.EN_LIGNE)
+        self.assertEqual(self.client.get(reverse("corriger_paiement", args=[en_ligne.pk])).status_code, 404)
