@@ -112,6 +112,11 @@ def ajuster_stock(reference_id, variation, motif, utilisateur, commentaire=""):
         raise StockInsuffisant(f"Le stock ne peut pas devenir négatif ({ref.quantite} en stock).")
     Reference.objects.filter(pk=ref.pk).update(quantite=F("quantite") + variation)
     shopify.signaler_stock(ref.pk)
+    if ref.quantite + variation == 0 and ref.est_unique and ref.modele_id and (
+        ref.modele.variantes.filter(active=True).exclude(pk=ref.pk).exists()
+    ):
+        # Ancienne « taille unique » vidée après répartition sur les tailles/couleurs : masquée.
+        Reference.objects.filter(pk=ref.pk).update(active=False)
     return Ajustement.objects.create(
         reference=ref, variation=variation, motif=motif, utilisateur=utilisateur, commentaire=commentaire
     )
@@ -187,6 +192,11 @@ def ajouter_variantes(modele, tailles, couleurs):
                 Reference.objects.create(modele=modele, taille=taille, couleur=couleur, quantite=0)
                 existantes.add(cle)
                 creees += 1
+    demande_unique = Taille.TU in tailles and not couleurs
+    if creees and not demande_unique:
+        # Article à taille unique désormais décliné en tailles ou couleurs : sa variante
+        # « taille unique » sans stock est masquée (elle reste dans l'historique des ventes).
+        modele.variantes.filter(taille=Taille.TU, couleur__isnull=True, quantite=0).update(active=False)
     return creees
 
 

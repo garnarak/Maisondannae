@@ -204,8 +204,8 @@ class EnvoiVersShopify(BaseShopify):
 class CreationDeProduits(BaseShopify):
     def test_cree_en_brouillon_les_modeles_absents(self):
         self.boutique.variantes.clear()
-        n = shopify.creer_produits_manquants()
-        self.assertEqual(n, 1)
+        n, incomplets = shopify.creer_produits_manquants()
+        self.assertEqual((n, incomplets), (1, 0))
         creation = next(r for r in self.boutique.requetes if r["nom"] == "CreerProduit")["variables"]["input"]
         self.assertEqual(creation["status"], "DRAFT")
         self.assertEqual(creation["title"], "Robe portefeuille")
@@ -214,10 +214,48 @@ class CreationDeProduits(BaseShopify):
         self.s.refresh_from_db()
         self.assertTrue(self.s.shopify_variant_id)
         # Deuxième passage : rien à créer, pas de doublon.
-        self.assertEqual(shopify.creer_produits_manquants(), 0)
+        self.assertEqual(shopify.creer_produits_manquants(), (0, 0))
+
+    def test_produit_supprime_dans_shopify_recree(self):
+        self.boutique.variantes.clear()
+        shopify.creer_produits_manquants()
+        self.boutique.variantes.clear()  # produit supprimé à la main dans Shopify
+        self.assertEqual(shopify.creer_produits_manquants(), (1, 0))
+        self.s.refresh_from_db()
+        self.assertEqual(self.s.shopify_variant_id, self.boutique.variantes[self.s.sku]["id"])
+
+    def test_article_a_taille_unique_decline_ensuite(self):
+        foulard = services.creer_modele("Foulard", None, Decimal("5"), Decimal("15"), ["TU"], [])
+        unique = foulard.variantes.get()
+        self.assertEqual(shopify.creer_produits_manquants(), (1, 0))
+        # Le foulard existe finalement en deux couleurs : la variante unique vide est masquée…
+        rouge, _ = Couleur.objects.get_or_create(nom="Rouge")
+        services.ajouter_variantes(foulard, ["TU"], [self.noir, rouge])
+        unique.refresh_from_db()
+        self.assertFalse(unique.active)
+        # … et le produit Shopify à taille unique est signalé, sans être créé en double.
+        self.assertEqual(shopify.creer_produits_manquants(), (0, 1))
+        self.assertIn("Foulard", EvenementShopify.objects.get(action="Variantes absentes de Shopify").message)
+        # Une fois ce produit supprimé dans Shopify, il est recréé avec ses couleurs.
+        del self.boutique.variantes[unique.sku]
+        self.assertEqual(shopify.creer_produits_manquants(), (1, 0))
+        creation = [r for r in self.boutique.requetes if r["nom"] == "CreerProduit"][-1]["variables"]["input"]
+        self.assertEqual(len(creation["variants"]), 2)
+
+    def test_variante_unique_avec_stock_reste_visible(self):
+        foulard = services.creer_modele("Foulard", None, Decimal("5"), Decimal("15"), ["TU"], [])
+        unique = foulard.variantes.get()
+        services.ajuster_stock(unique.pk, 2, Ajustement.Motif.REASSORT, self.admin)
+        services.ajouter_variantes(foulard, ["S", "M"], [])
+        unique.refresh_from_db()
+        self.assertTrue(unique.active)
+        # Une fois son stock réparti et remis à 0, elle est masquée.
+        services.ajuster_stock(unique.pk, -2, Ajustement.Motif.INVENTAIRE, self.admin)
+        unique.refresh_from_db()
+        self.assertFalse(unique.active)
 
     def test_ne_recree_pas_un_modele_deja_dans_shopify(self):
-        self.assertEqual(shopify.creer_produits_manquants(), 0)
+        self.assertEqual(shopify.creer_produits_manquants(), (0, 0))
         self.assertNotIn("CreerProduit", self.boutique.noms())
 
 

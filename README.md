@@ -117,6 +117,16 @@ L'outil fait foi pour le stock et les prix ; la boutique Shopify suit automatiqu
      dans Shopify, puis publier) ; les produits déjà présents avec le même SKU sont simplement liés ;
    - **Recevoir les commandes** : abonne l'outil aux commandes, annulations et remboursements.
 
+### Ajouter une taille ou une couleur à un article déjà dans Shopify
+
+L'outil ne modifie jamais un produit existant de Shopify (photos et descriptions restent
+intactes). Après avoir ajouté la variante dans l'outil :
+
+- produit **pas encore en vente** : le supprimer dans Shopify, puis cliquer sur
+  « Créer les produits manquants » ;
+- produit **déjà en vente** : ajouter la variante dans Shopify en lui donnant **le même SKU**
+  que dans l'outil (visible sur la page du modèle) ; l'outil la reconnaît et lui envoie son stock.
+
 ## Gestion des versions
 
 - La branche `main` contient toujours une version stable, prête à être mise en ligne.

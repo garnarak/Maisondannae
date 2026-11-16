@@ -7,6 +7,15 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.0.1 — 16/11/2026
+
+- Shopify, « Créer les produits manquants » :
+  - un produit supprimé à la main dans Shopify est recréé (le lien est vérifié à chaque fois) ;
+  - un produit déjà dans Shopify auquel il manque des tailles ou couleurs n'est jamais créé
+    en double : les variantes manquantes et leur SKU sont listées dans le journal
+- Article à taille unique décliné ensuite en tailles ou couleurs : sa variante « Taille unique »
+  est masquée dès qu'elle n'a plus de stock (un message l'indique sur la page du modèle)
+
 ## 2.0.0 — 16/11/2026
 
 - Couplage avec la boutique Shopify, par le SKU des variantes :

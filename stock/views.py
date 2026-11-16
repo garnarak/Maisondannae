@@ -284,6 +284,14 @@ def modele_edit(request, pk):
             tailles = sorted({v.taille for v in variantes}, key=lambda t: ORDRE_TAILLES.get(t, 99))
         n = services.ajouter_variantes(modele, tailles, couleurs)
         messages.success(request, f"{n} variante(s) ajoutée(s)." if n else "Ces variantes existent déjà.")
+        unique = modele.variantes.filter(taille=Taille.TU, couleur__isnull=True).first()
+        if n and unique and modele.variantes.count() > 1:
+            if not unique.active:
+                messages.info(request, "La variante « Taille unique », sans stock, est masquée.")
+            elif unique.quantite:
+                messages.warning(request, f"La variante « Taille unique » a encore {unique.quantite} pièce(s) : "
+                                 "répartissez-les sur les nouvelles variantes (entrée en stock), puis mettez-la à 0 "
+                                 "avec « Ajuster » ; elle sera alors masquée.")
         return redirect("modele_edit", pk=modele.pk)
     if action == "entree":
         quantites, erreur = {}, False
