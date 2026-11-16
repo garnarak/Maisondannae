@@ -73,7 +73,16 @@ def annuler_vente(vente_id):
     vente = Vente.objects.select_for_update().get(pk=vente_id)
     Reference.objects.filter(pk=vente.reference_id).update(quantite=F("quantite") + vente.quantite)
     shopify.signaler_stock(vente.reference_id)
+    _reafficher_si_restock(vente.reference_id)
     vente.delete()
+
+
+def _reafficher_si_restock(reference_id):
+    """Une ancienne « taille unique » masquée qui récupère une pièce (vente annulée, article
+    rendu) redevient visible, pour que cette pièce ne disparaisse pas du stock."""
+    Reference.objects.filter(
+        pk=reference_id, active=False, taille=Taille.TU, couleur__isnull=True, quantite__gt=0, modele__active=True,
+    ).update(active=True)
 
 
 @transaction.atomic
@@ -100,6 +109,7 @@ def retour_partiel(vente_id, quantite):
         return annuler_vente(vente.pk)
     Reference.objects.filter(pk=vente.reference_id).update(quantite=F("quantite") + quantite)
     shopify.signaler_stock(vente.reference_id)
+    _reafficher_si_restock(vente.reference_id)
     vente.quantite -= quantite
     vente.montant_especes = min(vente.montant_especes, vente.chiffre_affaires)
     vente.save(update_fields=["quantite", "montant_especes"])
@@ -112,6 +122,11 @@ def ajuster_stock(reference_id, variation, motif, utilisateur, commentaire=""):
         raise StockInsuffisant(f"Le stock ne peut pas devenir négatif ({ref.quantite} en stock).")
     Reference.objects.filter(pk=ref.pk).update(quantite=F("quantite") + variation)
     shopify.signaler_stock(ref.pk)
+    if ref.quantite + variation == 0 and ref.est_unique and ref.modele_id and (
+        ref.modele.variantes.filter(active=True).exclude(pk=ref.pk).exists()
+    ):
+        # Ancienne « taille unique » vidée après répartition sur les tailles/couleurs : masquée.
+        Reference.objects.filter(pk=ref.pk).update(active=False)
     return Ajustement.objects.create(
         reference=ref, variation=variation, motif=motif, utilisateur=utilisateur, commentaire=commentaire
     )
@@ -187,6 +202,11 @@ def ajouter_variantes(modele, tailles, couleurs):
                 Reference.objects.create(modele=modele, taille=taille, couleur=couleur, quantite=0)
                 existantes.add(cle)
                 creees += 1
+    demande_unique = Taille.TU in tailles and not couleurs
+    if creees and not demande_unique:
+        # Article à taille unique désormais décliné en tailles ou couleurs : sa variante
+        # « taille unique » sans stock est masquée (elle reste dans l'historique des ventes).
+        modele.variantes.filter(taille=Taille.TU, couleur__isnull=True, quantite=0).update(active=False)
     return creees
 
 

@@ -144,20 +144,24 @@ def tester_connexion(client=None):
     return donnees["shop"]["name"], [e["name"] for e in donnees["locations"]["nodes"]]
 
 
-def lier_variantes(variantes, client=None):
-    """Retrouve dans Shopify les variantes de même SKU et mémorise leurs identifiants."""
+def lier_variantes(variantes, client=None, verifier=False):
+    """Retrouve dans Shopify les variantes de même SKU et mémorise leurs identifiants.
+    Avec verifier=True, les liens déjà mémorisés sont aussi contrôlés : une variante dont le
+    produit a été supprimé dans Shopify perd son lien (elle pourra être recréée)."""
     client = client or ClientShopify()
-    a_lier = [v for v in variantes if v.sku and not v.shopify_inventory_item_id]
+    a_lier = [v for v in variantes if v.sku and (verifier or not v.shopify_inventory_item_id)]
     for i in range(0, len(a_lier), TAILLE_LOT):
         lot = {v.sku: v for v in a_lier[i:i + TAILLE_LOT]}
         q = " OR ".join(f'sku:"{sku}"' for sku in lot)
+        trouves = {}
         for n in client.graphql(Q_VARIANTES, {"q": q})["productVariants"]["nodes"]:
-            v = lot.get(n.get("sku"))
-            if v:
-                v.shopify_variant_id, v.shopify_inventory_item_id = n["id"], n["inventoryItem"]["id"]
-                Reference.objects.filter(pk=v.pk).update(
-                    shopify_variant_id=v.shopify_variant_id, shopify_inventory_item_id=v.shopify_inventory_item_id
-                )
+            if n.get("sku") in lot:
+                trouves[n["sku"]] = (n["id"], n["inventoryItem"]["id"])
+        for sku, v in lot.items():
+            ids = trouves.get(sku, ("", ""))
+            if ids != (v.shopify_variant_id, v.shopify_inventory_item_id):
+                v.shopify_variant_id, v.shopify_inventory_item_id = ids
+                Reference.objects.filter(pk=v.pk).update(shopify_variant_id=ids[0], shopify_inventory_item_id=ids[1])
 
 
 def pousser_stock(ids, client=None):
@@ -244,16 +248,26 @@ def creer_produits_manquants(client=None):
     """Crée en brouillon dans Shopify les modèles dont aucune variante n'y existe encore,
     avec tailles, couleurs, prix, SKU et quantités. Renvoie le nombre de produits créés."""
     client = client or ClientShopify()
-    variantes = list(Reference.objects.filter(active=True).select_related("modele", "couleur"))
-    lier_variantes(variantes, client)
+    toutes = list(Reference.objects.select_related("modele", "couleur"))
+    lier_variantes(toutes, client, verifier=True)
     emplacement = _emplacement(client)
     par_modele = {}
-    for v in variantes:
+    for v in toutes:
         par_modele.setdefault(v.modele, []).append(v)
-    crees = 0
-    for modele, vs in par_modele.items():
-        if any(v.shopify_variant_id for v in vs):
-            continue  # déjà dans Shopify (au moins en partie) : on ne crée pas de doublon
+    crees, incomplets = 0, []
+    for modele, toutes_vs in par_modele.items():
+        vs = [v for v in toutes_vs if v.active]
+        if len(vs) > 1:
+            # Ancienne variante « taille unique » vide d'un modèle décliné en tailles/couleurs : inutile.
+            vs = [v for v in vs if not (v.est_unique and v.quantite == 0)]
+        if not vs:
+            continue
+        if any(v.shopify_variant_id for v in toutes_vs):
+            # Déjà dans Shopify : pas de doublon. Les variantes absentes sont signalées.
+            absentes = [v for v in vs if not v.shopify_variant_id]
+            if absentes:
+                incomplets.append(f"{modele} : " + ", ".join(f"{v.libelle_variante} (SKU {v.sku})" for v in absentes))
+            continue
         vs.sort(key=lambda v: (ORDRE_TAILLES.get(v.taille, 99), v.couleur.nom if v.couleur else ""))
         tailles = list(dict.fromkeys(v.get_taille_display() for v in vs))
         couleurs = list(dict.fromkeys(v.couleur.nom for v in vs if v.couleur))
@@ -288,12 +302,17 @@ def creer_produits_manquants(client=None):
         crees += 1
         journaliser(EvenementShopify.Sens.ENVOI, "Création de produit", EvenementShopify.Statut.OK,
                     f"{modele} ({len(vs)} variante(s)), en brouillon")
-    return crees
+    if incomplets:
+        journaliser(EvenementShopify.Sens.ENVOI, "Variantes absentes de Shopify", EvenementShopify.Statut.IGNORE,
+                    "Produits déjà dans Shopify, variantes à ajouter dans Shopify avec le même SKU (ou supprimer le "
+                    "produit dans Shopify puis recliquer sur « Créer les produits manquants ») — " + " ; ".join(incomplets))
+    return crees, len(incomplets)
 
 
 def resynchroniser_tout(client=None):
     """Renvoie le stock de toutes les variantes et le prix de tous les modèles."""
     client = client or ClientShopify()
+    lier_variantes(list(Reference.objects.all()), client, verifier=True)
     pousser_stock(list(Reference.objects.values_list("pk", flat=True)), client)
     for modele_id in Modele.objects.values_list("pk", flat=True):
         pousser_prix(modele_id, client)

@@ -55,9 +55,12 @@ def action(request, nom):
             shopify.resynchroniser_tout()
             messages.success(request, "Stock et prix renvoyés à Shopify. Le détail est dans le journal ci-dessous.")
         elif nom == "creer":
-            n = shopify.creer_produits_manquants()
+            n, incomplets = shopify.creer_produits_manquants()
             messages.success(request, f"{n} produit(s) créé(s) dans Shopify, en brouillon : vérifiez-les puis publiez-les depuis Shopify."
                              if n else "Aucun produit à créer : tous les modèles existent déjà dans Shopify.")
+            if incomplets:
+                messages.warning(request, f"{incomplets} produit(s) déjà dans Shopify n'ont pas toutes leurs tailles ou couleurs : "
+                                 "le détail est dans le journal ci-dessous.")
         elif nom == "abonner":
             n = shopify.abonner_notifications(request.build_absolute_uri(reverse("shopify_notifications")))
             messages.success(request, f"Shopify préviendra désormais l'outil des commandes ({n} abonnement(s) ajouté(s)).")
