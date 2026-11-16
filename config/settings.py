@@ -8,7 +8,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Version affichée dans l'application. À mettre à jour à chaque version publiée (voir CHANGELOG.md).
-APP_VERSION = "1.5.0"
+APP_VERSION = "2.0.0"
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key" if DEBUG else None)
@@ -139,3 +139,19 @@ LOGGING = {
         "django.request": {"handlers": ["console", "email_admins"], "level": "ERROR", "propagate": False},
     },
 }
+
+# Couplage Shopify (désactivé tant que SHOPIFY_SHOP n'est pas renseigné). La clé d'accès ne
+# vient que des variables d'environnement de Render, jamais du code.
+SHOPIFY_SHOP = os.environ.get("SHOPIFY_SHOP", "")  # ex. pvwcah-c9.myshopify.com
+SHOPIFY_API_VERSION = os.environ.get("SHOPIFY_API_VERSION", "2026-07")
+# Soit un jeton d'accès Admin API (application personnalisée « shpat_… »)…
+SHOPIFY_ACCESS_TOKEN = os.environ.get("SHOPIFY_ACCESS_TOKEN", "")
+# … soit l'identifiant et le secret d'une application du Dev Dashboard (jeton obtenu automatiquement).
+SHOPIFY_CLIENT_ID = os.environ.get("SHOPIFY_CLIENT_ID", "")
+SHOPIFY_CLIENT_SECRET = os.environ.get("SHOPIFY_CLIENT_SECRET", "")
+# Secret de signature des notifications (webhooks) ; par défaut, le secret de l'application.
+SHOPIFY_WEBHOOK_SECRET = os.environ.get("SHOPIFY_WEBHOOK_SECRET", "") or SHOPIFY_CLIENT_SECRET
+# Emplacement Shopify dont on met à jour le stock ; vide = le premier emplacement de la boutique.
+SHOPIFY_LOCATION_ID = os.environ.get("SHOPIFY_LOCATION_ID", "")
+# Envois vers Shopify en tâche de fond (les tests les font tout de suite).
+SHOPIFY_EN_ARRIERE_PLAN = True

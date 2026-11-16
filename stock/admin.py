@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Ajustement, Categorie, CorrectionPaiement, Couleur, Modele, RecuperationEspeces, Reference, User, Vente
+from .models import Ajustement, Categorie, CommandeShopify, CorrectionPaiement, Couleur, Modele, RecuperationEspeces, Reference, User, Vente
 
 
 @admin.register(User)
@@ -122,6 +122,26 @@ class CorrectionPaiementAdmin(admin.ModelAdmin):
     list_display = ["date", "vente", "administrateur", "ancien_paiement", "ancien_montant_especes",
                     "nouveau_paiement", "nouveau_montant_especes"]
     date_hierarchy = "date"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CommandeShopify)
+class CommandeShopifyAdmin(admin.ModelAdmin):
+    list_display = ["nom", "date", "nombre_de_ventes", "annulee", "recue_le"]
+    list_filter = ["annulee"]
+    search_fields = ["nom"]
+
+    @admin.display(description="ventes")
+    def nombre_de_ventes(self, obj):
+        return obj.ventes.count()
 
     def has_add_permission(self, request):
         return False

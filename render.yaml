@@ -29,6 +29,13 @@ services:
         sync: false
       - key: DJANGO_EMAIL_HOST_PASSWORD
         sync: false
+      # Couplage Shopify (facultatif) : voir README, section « Shopify ».
+      - key: SHOPIFY_SHOP
+        sync: false
+      - key: SHOPIFY_CLIENT_ID
+        sync: false
+      - key: SHOPIFY_CLIENT_SECRET
+        sync: false
 
 databases:
   - name: maisondannae-db

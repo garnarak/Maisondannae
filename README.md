@@ -80,6 +80,43 @@ En production, chaque erreur du site envoie un e-mail détaillé aux administrat
 
 Pour vérifier l'envoi, dans le **Shell** Render : `python manage.py sendtestemail --admins`.
 
+## Shopify
+
+L'outil fait foi pour le stock et les prix ; la boutique Shopify suit automatiquement.
+
+- **Outil → Shopify** : après chaque vente, annulation, ajustement, entrée en stock ou import
+  Excel, la quantité de la variante est envoyée à Shopify ; un changement de prix d'un modèle
+  est envoyé à toutes ses variantes. Le lien se fait par le **SKU** (identique des deux côtés).
+- **Shopify → outil** : chaque commande en ligne devient une vente « En ligne » (prix payé,
+  réductions déduites, attribuée à personne) et diminue le stock ; une annulation ou un retour
+  remis en stock remet les articles dans l'outil.
+- Si Shopify est injoignable, la vente est tout de même enregistrée ; l'écart est noté dans
+  Administration → Shopify, où le bouton « Tout renvoyer à Shopify » le corrige.
+
+### Mise en place (une seule fois)
+
+1. Dans Shopify : **Paramètres → Applications → Développer des applications** (Dev Dashboard),
+   créer une application « Maison d'Annae — stock » avec les autorisations
+   `read_products`, `write_products`, `read_inventory`, `write_inventory`, `read_locations`,
+   `read_orders`, puis l'installer sur la boutique.
+2. Copier son **Client ID** et son **Client secret** (ne les envoyer à personne).
+3. Dans Render, service **maisondannae** → **Environment**, ajouter :
+
+   | Variable | Valeur |
+   | --- | --- |
+   | `SHOPIFY_SHOP` | `pvwcah-c9.myshopify.com` |
+   | `SHOPIFY_CLIENT_ID` | le Client ID |
+   | `SHOPIFY_CLIENT_SECRET` | le Client secret |
+
+   (Avec une ancienne « application personnalisée », mettre son jeton `shpat_…` dans
+   `SHOPIFY_ACCESS_TOKEN` et son secret dans `SHOPIFY_WEBHOOK_SECRET`.)
+4. Dans l'outil, **Administration → Shopify** :
+   - **Tester la connexion** ;
+   - **Créer les produits manquants** : chaque modèle est créé dans Shopify **en brouillon**,
+     avec ses tailles, couleurs, prix, SKU et quantités (photos et descriptions à ajouter
+     dans Shopify, puis publier) ; les produits déjà présents avec le même SKU sont simplement liés ;
+   - **Recevoir les commandes** : abonne l'outil aux commandes, annulations et remboursements.
+
 ## Gestion des versions
 
 - La branche `main` contient toujours une version stable, prête à être mise en ligne.

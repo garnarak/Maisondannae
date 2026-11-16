@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 
+from . import shopify
 from .models import (
     FOND_DE_CAISSE, REMISES, Ajustement, CorrectionPaiement, Modele, RecuperationEspeces, Reference,
     Taille, Vente, prix_remise,
@@ -50,6 +51,7 @@ def enregistrer_vente(
         # Vente en ligne : payée en ligne, rien n'entre dans la caisse.
         paiement, especes = "", Decimal(0)
     Reference.objects.filter(pk=ref.pk).update(quantite=F("quantite") - quantite)
+    shopify.signaler_stock(ref.pk)
     return Vente.objects.create(
         reference=ref,
         quantite=quantite,
@@ -70,7 +72,37 @@ def enregistrer_vente(
 def annuler_vente(vente_id):
     vente = Vente.objects.select_for_update().get(pk=vente_id)
     Reference.objects.filter(pk=vente.reference_id).update(quantite=F("quantite") + vente.quantite)
+    shopify.signaler_stock(vente.reference_id)
     vente.delete()
+
+
+@transaction.atomic
+def enregistrer_vente_en_ligne(reference_id, quantite, prix_unitaire, commande, ligne_shopify=""):
+    """Vente issue d'une commande Shopify : prix réellement payé (réductions Shopify déduites),
+    attribuée à personne, sans passage en caisse."""
+    ref = Reference.objects.select_for_update().get(pk=reference_id)
+    if quantite > ref.quantite:
+        raise StockInsuffisant(f"Stock insuffisant : {ref.quantite} en stock.")
+    Reference.objects.filter(pk=ref.pk).update(quantite=F("quantite") - quantite)
+    shopify.signaler_stock(ref.pk)
+    return Vente.objects.create(
+        reference=ref, quantite=quantite, prix_catalogue=ref.prix_vente, prix_unitaire=prix_unitaire,
+        cout_unitaire=ref.cout_achat, canal=Vente.Canal.EN_LIGNE, vendeur=None, saisie_par=None,
+        commande_shopify=commande, ligne_shopify=ligne_shopify,
+    )
+
+
+@transaction.atomic
+def retour_partiel(vente_id, quantite):
+    """Article rendu : il revient en stock et la vente est réduite d'autant (supprimée si tout est rendu)."""
+    vente = Vente.objects.select_for_update().get(pk=vente_id)
+    if quantite >= vente.quantite:
+        return annuler_vente(vente.pk)
+    Reference.objects.filter(pk=vente.reference_id).update(quantite=F("quantite") + quantite)
+    shopify.signaler_stock(vente.reference_id)
+    vente.quantite -= quantite
+    vente.montant_especes = min(vente.montant_especes, vente.chiffre_affaires)
+    vente.save(update_fields=["quantite", "montant_especes"])
 
 
 @transaction.atomic
@@ -79,6 +111,7 @@ def ajuster_stock(reference_id, variation, motif, utilisateur, commentaire=""):
     if ref.quantite + variation < 0:
         raise StockInsuffisant(f"Le stock ne peut pas devenir négatif ({ref.quantite} en stock).")
     Reference.objects.filter(pk=ref.pk).update(quantite=F("quantite") + variation)
+    shopify.signaler_stock(ref.pk)
     return Ajustement.objects.create(
         reference=ref, variation=variation, motif=motif, utilisateur=utilisateur, commentaire=commentaire
     )
