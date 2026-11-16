@@ -14,7 +14,9 @@ Le suffixe `-beta` indique une version de test.
   - un produit déjà dans Shopify auquel il manque des tailles ou couleurs n'est jamais créé
     en double : les variantes manquantes et leur SKU sont listées dans le journal
 - Article à taille unique décliné ensuite en tailles ou couleurs : sa variante « Taille unique »
-  est masquée dès qu'elle n'a plus de stock (un message l'indique sur la page du modèle)
+  est masquée dès qu'elle n'a plus de stock (un message l'indique sur la page du modèle) ;
+  ses ventes passées restent dans Ventes, Marge et les exports, et elle réapparaît si une
+  pièce revient en stock (vente annulée, retour)
 
 ## 2.0.0 — 16/11/2026
 

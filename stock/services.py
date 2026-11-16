@@ -73,7 +73,16 @@ def annuler_vente(vente_id):
     vente = Vente.objects.select_for_update().get(pk=vente_id)
     Reference.objects.filter(pk=vente.reference_id).update(quantite=F("quantite") + vente.quantite)
     shopify.signaler_stock(vente.reference_id)
+    _reafficher_si_restock(vente.reference_id)
     vente.delete()
+
+
+def _reafficher_si_restock(reference_id):
+    """Une ancienne « taille unique » masquée qui récupère une pièce (vente annulée, article
+    rendu) redevient visible, pour que cette pièce ne disparaisse pas du stock."""
+    Reference.objects.filter(
+        pk=reference_id, active=False, taille=Taille.TU, couleur__isnull=True, quantite__gt=0, modele__active=True,
+    ).update(active=True)
 
 
 @transaction.atomic
@@ -100,6 +109,7 @@ def retour_partiel(vente_id, quantite):
         return annuler_vente(vente.pk)
     Reference.objects.filter(pk=vente.reference_id).update(quantite=F("quantite") + quantite)
     shopify.signaler_stock(vente.reference_id)
+    _reafficher_si_restock(vente.reference_id)
     vente.quantite -= quantite
     vente.montant_especes = min(vente.montant_especes, vente.chiffre_affaires)
     vente.save(update_fields=["quantite", "montant_especes"])

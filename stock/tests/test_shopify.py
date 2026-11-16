@@ -254,6 +254,24 @@ class CreationDeProduits(BaseShopify):
         unique.refresh_from_db()
         self.assertFalse(unique.active)
 
+    def test_historique_intact_quand_la_taille_unique_est_masquee(self):
+        foulard = services.creer_modele("Foulard", None, Decimal("5"), Decimal("15"), ["TU"], [])
+        unique = foulard.variantes.get()
+        services.ajuster_stock(unique.pk, 1, Ajustement.Motif.REASSORT, self.admin)
+        vente = vendre(unique.pk, 1, self.vendeuse)
+        services.ajouter_variantes(foulard, ["S", "M"], [])
+        unique.refresh_from_db()
+        self.assertFalse(unique.active)
+        # Ventes, marge et export Excel comptent toujours la vente de l'ancienne variante.
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get(reverse("ventes")), "Foulard")
+        self.assertContains(self.client.get(reverse("marge")), "Foulard")
+        # Si cette vente est annulée, la pièce revient en stock et la variante réapparaît.
+        services.annuler_vente(vente.pk)
+        unique.refresh_from_db()
+        self.assertTrue(unique.active)
+        self.assertEqual(unique.quantite, 1)
+
     def test_ne_recree_pas_un_modele_deja_dans_shopify(self):
         self.assertEqual(shopify.creer_produits_manquants(), (0, 0))
         self.assertNotIn("CreerProduit", self.boutique.noms())
