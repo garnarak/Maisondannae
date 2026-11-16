@@ -7,10 +7,11 @@
   <ul class="errorlist">{% for e in analyse.erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
   <p>Rien n'a été importé. Corrigez le fichier puis <a href="{% url 'excel_accueil' %}">déposez-le à nouveau</a>.</p>
 {% else %}
-  <p><strong>{{ analyse.lignes|length }}</strong> références lues, <strong>{{ pieces }}</strong> pièces :
+  <p><strong>{{ analyse.lignes|length }}</strong> variantes lues, <strong>{{ pieces }}</strong> pièces :
      <strong>{{ creations|length }}</strong> à créer, <strong>{{ mises_a_jour|length }}</strong> à mettre à jour,
      {{ inchangees|length }} inchangée{{ inchangees|length|pluralize }}.</p>
   {% if analyse.nouvelles_categories %}<p>Nouvelles catégories créées : <strong>{{ analyse.nouvelles_categories|join:", " }}</strong>.</p>{% endif %}
+  {% if analyse.nouvelles_couleurs %}<p>Nouvelles couleurs ajoutées à la liste : <strong>{{ analyse.nouvelles_couleurs|join:", " }}</strong>.</p>{% endif %}
   {% if analyse.avertissements %}
     <div class="module"><h2>À vérifier ({{ analyse.avertissements|length }})</h2>
       <ul style="padding: 8px 32px">{% for a in analyse.avertissements %}<li>{{ a }}</li>{% endfor %}</ul></div>
@@ -23,15 +24,15 @@
 
   {% if mises_a_jour %}
   <div class="module"><h2>Mises à jour ({{ mises_a_jour|length }})</h2>
-    <table style="width:100%"><thead><tr><th>Ligne</th><th>Désignation</th><th>Changements</th></tr></thead><tbody>
-    {% for l in mises_a_jour %}<tr><td>{{ l.numero }}</td><td>{{ l.designation }}</td><td>{{ l.details|join:" · " }}</td></tr>{% endfor %}
+    <table style="width:100%"><thead><tr><th>Ligne</th><th>Variante</th><th>Changements</th></tr></thead><tbody>
+    {% for l in mises_a_jour %}<tr><td>{{ l.numero }}</td><td>{{ l.libelle }}</td><td>{{ l.details|join:" · " }}</td></tr>{% endfor %}
     </tbody></table></div>
   {% endif %}
   {% if creations %}
   <div class="module"><h2>Créations ({{ creations|length }})</h2>
-    <table style="width:100%"><thead><tr><th>Ligne</th><th>Désignation</th><th>Catégorie</th><th>Coût</th><th>Prix</th><th>Qté</th></tr></thead><tbody>
-    {% for l in creations %}<tr><td>{{ l.numero }}</td><td>{{ l.designation }}</td><td>{{ l.categorie|default:"—" }}</td>
-      <td>{{ l.cout_achat }} €</td><td>{{ l.prix_vente }} €</td><td>{{ l.quantite }}</td></tr>{% endfor %}
+    <table style="width:100%"><thead><tr><th>Ligne</th><th>Modèle</th><th>Taille</th><th>Couleur</th><th>Catégorie</th><th>Coût</th><th>Prix</th><th>Qté</th></tr></thead><tbody>
+    {% for l in creations %}<tr><td>{{ l.numero }}</td><td>{{ l.modele }}</td><td>{{ l.taille }}</td><td>{{ l.couleur|default:"—" }}</td>
+      <td>{{ l.categorie|default:"—" }}</td><td>{{ l.cout_achat }} €</td><td>{{ l.prix_vente }} €</td><td>{{ l.quantite }}</td></tr>{% endfor %}
     </tbody></table></div>
   {% endif %}
 {% endif %}

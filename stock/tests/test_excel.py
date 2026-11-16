@@ -46,7 +46,7 @@ class ImportStockTests(TestCase):
             [None, "Haut dentelle taupe", "-", 5, 15, 1, "True", None, 5],
             [None, None, None, None, None, None, None, None, 34],  # ligne de total : ignorée
         ])
-        self.assertContains(r, "3</strong> références lues")
+        self.assertContains(r, "3</strong> variantes lues")
         self.assertContains(r, "Nouvelles catégories créées : <strong>Body</strong>")
         self.assertContains(r, "sans catégorie")
         self.assertFalse(Reference.objects.exists())  # rien avant confirmation
@@ -119,9 +119,10 @@ class ExportTests(TestCase):
         self.client.force_login(self.admin)
         feuille = self._classeur(self.client.get(reverse("excel_export_stock")))
         lignes = list(feuille.iter_rows(values_only=True))
-        self.assertEqual(lignes[0][:6], ("DÉSIGNATION", "CATÉGORIE", "COÛT D'ACHAT", "PRIX DE VENTE",
-                                         "QUANTITÉ EN STOCK", "ACTIVE"))
-        self.assertEqual(lignes[1][:8], ("Robe lin", "Pull", 30, 50, 10, "Oui", 300, 500))
+        self.assertEqual(lignes[0][:9], ("MODÈLE", "CATÉGORIE", "TAILLE", "COULEUR", "SKU", "COÛT D'ACHAT",
+                                         "PRIX DE VENTE", "QUANTITÉ EN STOCK", "ACTIVE"))
+        self.assertEqual(lignes[1][:4], ("Robe lin", "Pull", "TU", None))
+        self.assertEqual(lignes[1][5:11], (30, 50, 10, "Oui", 300, 500))
         # Le fichier exporté se réimporte sans changement.
         flux = io.BytesIO(self.client.get(reverse("excel_export_stock")).content)
         flux.name = "stock.xlsx"

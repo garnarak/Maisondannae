@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Ajustement, Categorie, CorrectionPaiement, RecuperationEspeces, Reference, User, Vente
+from .models import Ajustement, Categorie, CorrectionPaiement, Couleur, Modele, RecuperationEspeces, Reference, User, Vente
 
 
 @admin.register(User)
@@ -22,16 +22,54 @@ class CategorieAdmin(admin.ModelAdmin):
         return obj.references.count()
 
 
+@admin.register(Couleur)
+class CouleurAdmin(admin.ModelAdmin):
+    list_display = ["nom", "nombre_de_variantes"]
+    search_fields = ["nom"]
+
+    @admin.display(description="variantes")
+    def nombre_de_variantes(self, obj):
+        return obj.variantes.count()
+
+
+class VarianteInline(admin.TabularInline):
+    model = Reference
+    fields = ["taille", "couleur", "sku", "quantite", "active"]
+    readonly_fields = ["taille", "couleur", "quantite"]
+    extra = 0
+    can_delete = False
+    show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False  # les variantes s'ajoutent depuis la page du modèle dans l'outil
+
+
+@admin.register(Modele)
+class ModeleAdmin(admin.ModelAdmin):
+    list_display = ["nom", "categorie", "cout_achat", "prix_vente", "nombre_de_variantes", "active"]
+    list_filter = ["active", "categorie"]
+    search_fields = ["nom"]
+    inlines = [VarianteInline]
+
+    @admin.display(description="variantes")
+    def nombre_de_variantes(self, obj):
+        return obj.variantes.count()
+
+    def has_add_permission(self, request):
+        return False  # création dans l'outil : Stock → « Nouveau modèle »
+
+
 @admin.register(Reference)
 class ReferenceAdmin(admin.ModelAdmin):
-    list_display = ["designation", "categorie", "cout_achat", "prix_vente", "quantite", "active"]
-    list_filter = ["active", "categorie"]
-    search_fields = ["designation"]
-    # La quantité passe par les ventes et ajustements pour garder une trace.
-    readonly_fields = ["quantite"]
+    list_display = ["designation", "categorie", "taille", "couleur", "sku", "prix_vente", "quantite", "active"]
+    list_filter = ["active", "categorie", "taille", "couleur"]
+    search_fields = ["designation", "sku"]
+    fields = ["modele", "taille", "couleur", "sku", "quantite", "active"]
+    # Le modèle porte nom, prix et coût ; la quantité passe par les ventes et ajustements.
+    readonly_fields = ["modele", "taille", "couleur", "quantite"]
 
-    def get_readonly_fields(self, request, obj=None):
-        return self.readonly_fields if obj else []
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(Vente)

@@ -5,7 +5,8 @@ from . import views
 urlpatterns = [
     path("", views.stock_list, name="stock_list"),
     path("ruptures/", views.ruptures, name="ruptures"),
-    path("references/nouvelle/", views.reference_create, name="reference_create"),
+    path("modeles/nouveau/", views.modele_create, name="modele_create"),
+    path("modeles/<int:pk>/", views.modele_edit, name="modele_edit"),
     path("references/<int:pk>/modifier/", views.reference_edit, name="reference_edit"),
     path("references/<int:pk>/vendre/", views.vendre, name="vendre"),
     path("references/<int:pk>/paiement/", views.paiement, name="paiement"),

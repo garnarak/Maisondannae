@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Nouveau modèle{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'stock_list' %}">← Retour au stock</a>
+<div class="card formulaire-modele">
+  <h1>Nouveau modèle</h1>
+  <form method="post">{% csrf_token %}
+    {% include "stock/_champs.html" with form=form %}
+    <h2>Tailles et couleurs</h2>
+    <p class="muted">Une variante est créée pour chaque taille × couleur cochée. Le prix et le coût sont les mêmes pour toutes.</p>
+    {% include "stock/_champs.html" with form=variantes_form %}
+    <button class="primary block">Créer le modèle</button>
+  </form>
+</div>
+{% endblock %}

@@ -38,11 +38,13 @@ class DroitsTests(BaseTestCase):
 
     def test_restreint_ne_peut_pas_modifier_prix_ni_voir_marge(self):
         self.client.force_login(self.vendeuse)
-        for url in [reverse("reference_edit", args=[self.robe.pk]), reverse("reference_create"), reverse("marge")]:
+        urls = [reverse("reference_edit", args=[self.robe.pk]), reverse("modele_create"),
+                reverse("modele_edit", args=[self.robe.modele_id]), reverse("marge")]
+        for url in urls:
             self.assertEqual(self.client.get(url).status_code, 403, url)
         r = self.client.post(
-            reverse("reference_edit", args=[self.robe.pk]),
-            {"designation": "Robe lin", "cout_achat": "1", "prix_vente": "1", "active": "on"},
+            reverse("modele_edit", args=[self.robe.modele_id]),
+            {"action": "modele", "nom": "Robe lin", "cout_achat": "1", "prix_vente": "1", "active": "on"},
         )
         self.assertEqual(r.status_code, 403)
         self.robe.refresh_from_db()
@@ -117,5 +119,5 @@ class MargeTests(BaseTestCase):
         self.assertEqual(r.context["ca"], Decimal("238.00"))
         self.assertEqual(r.context["marge"], Decimal("145.66"))
         lignes = list(r.context["par_reference"])
-        self.assertEqual([l["reference__designation"] for l in lignes], ["Robe lin", "Pull"])
+        self.assertEqual([l["reference__modele__nom"] for l in lignes], ["Robe lin", "Pull"])
         self.assertEqual(len(r.context["historique"]), 2)
