@@ -7,7 +7,7 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
-## 1.5.0 — non publiée
+## 1.5.0 — 16/11/2026
 
 - Modèles et variantes : un modèle (nom, catégorie, coût, prix) se décline en variantes
   de taille (TU, XS, S, M, L, XL, XXL) et de couleur ; chaque variante a son stock et son SKU
