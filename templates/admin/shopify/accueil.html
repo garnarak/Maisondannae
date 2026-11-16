@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Accueil</a> › Shopify</div>{% endblock %}
+{% block content %}
+<div class="module" style="max-width: 900px">
+  <h2>État du couplage</h2>
+  <div style="padding: 12px 16px">
+    {% if actif %}
+      <p>Boutique : <strong>{{ boutique }}</strong> — couplage <strong style="color:#2e7d32">actif</strong>.</p>
+      {% if not signature %}<p style="color:#b71c1c">Le secret de signature des notifications (SHOPIFY_WEBHOOK_SECRET ou SHOPIFY_CLIENT_SECRET) manque : les commandes Shopify seront refusées.</p>{% endif %}
+    {% else %}
+      <p>Couplage <strong style="color:#b71c1c">non configuré</strong> : renseignez sur Render les variables
+        <code>SHOPIFY_SHOP</code>, <code>SHOPIFY_CLIENT_ID</code> et <code>SHOPIFY_CLIENT_SECRET</code> (voir le guide dans le README).</p>
+    {% endif %}
+    <table style="margin-top: 8px">
+      <tr><th>Variantes dans l'outil</th><td>{{ nb_variantes }}</td></tr>
+      <tr><th>Liées à Shopify (même SKU)</th><td>{{ nb_liees }}</td></tr>
+      <tr><th>En attente de renvoi (dernier envoi en échec)</th><td>{{ nb_a_synchroniser }}</td></tr>
+      <tr><th>Commandes Shopify reçues</th><td>{{ nb_commandes }}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="module" style="max-width: 900px; margin-top: 24px">
+  <h2>Actions</h2>
+  <div style="padding: 12px 16px">
+    <form method="post" action="{% url 'shopify_action' 'tester' %}" style="margin-bottom: 12px">{% csrf_token %}
+      <input type="submit" value="Tester la connexion" {% if not actif %}disabled{% endif %}>
+      <span class="help">Vérifie la clé et affiche le nom de la boutique.</span></form>
+    <form method="post" action="{% url 'shopify_action' 'creer' %}" style="margin-bottom: 12px">{% csrf_token %}
+      <input type="submit" value="Créer les produits manquants" {% if not actif %}disabled{% endif %}>
+      <span class="help">Crée dans Shopify, <strong>en brouillon</strong>, chaque modèle qui n'y est pas encore (tailles, couleurs, prix, SKU, quantités). Les photos et descriptions s'ajoutent ensuite dans Shopify.</span></form>
+    <form method="post" action="{% url 'shopify_action' 'resynchroniser' %}" style="margin-bottom: 12px">{% csrf_token %}
+      <input type="submit" value="Tout renvoyer à Shopify" {% if not actif %}disabled{% endif %}>
+      <span class="help">Renvoie le stock et le prix de toutes les variantes. L'outil fait foi.</span></form>
+    <form method="post" action="{% url 'shopify_action' 'abonner' %}">{% csrf_token %}
+      <input type="submit" value="Recevoir les commandes" {% if not actif %}disabled{% endif %}>
+      <span class="help">Demande à Shopify de prévenir l'outil des commandes, annulations et remboursements, à l'adresse <code>{{ adresse_notifications }}</code>.</span></form>
+  </div>
+</div>
+
+<div class="module" style="max-width: 900px; margin-top: 24px">
+  <h2>Journal des échanges (50 derniers)</h2>
+  <table style="width: 100%">
+    <thead><tr><th>Date</th><th>Sens</th><th>Action</th><th>Statut</th><th>Détail</th></tr></thead>
+    <tbody>
+    {% for e in evenements %}
+      <tr><td style="white-space: nowrap">{{ e.date|date:"d/m/Y H:i" }}</td><td>{{ e.get_sens_display }}</td><td>{{ e.action }}</td>
+        <td style="color: {% if e.statut == 'erreur' %}#b71c1c{% elif e.statut == 'ok' %}#2e7d32{% else %}#777{% endif %}">{{ e.get_statut_display }}</td>
+        <td>{{ e.message }}</td></tr>
+    {% empty %}
+      <tr><td colspan="5">Aucun échange pour le moment.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

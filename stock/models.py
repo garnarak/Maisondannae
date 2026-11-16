@@ -105,8 +105,13 @@ class Modele(models.Model):
         return self.nom
 
     def save(self, *args, **kwargs):
-        ancien = Modele.objects.filter(pk=self.pk).values_list("active", flat=True).first() if self.pk else None
+        avant = Modele.objects.filter(pk=self.pk).values("active", "prix_vente").first() if self.pk else None
+        ancien = avant["active"] if avant else None
         super().save(*args, **kwargs)
+        if avant and avant["prix_vente"] != self.prix_vente:
+            from . import shopify  # import tardif : shopify importe les modèles
+
+            shopify.signaler_prix(self.pk)
         # Les variantes recopient nom, catégorie, coût et prix du modèle ; masquer ou
         # réafficher le modèle masque ou réaffiche toutes ses variantes.
         for variante in self.variantes.all():
@@ -125,6 +130,11 @@ class Reference(models.Model):
         "SKU", max_length=40, unique=True, null=True, blank=True,
         help_text="Code commun avec la boutique en ligne. Généré automatiquement s'il est vide.",
     )
+    # Lien avec la variante Shopify de même SKU, renseigné à la première synchronisation.
+    shopify_variant_id = models.CharField(max_length=80, blank=True, editable=False)
+    shopify_inventory_item_id = models.CharField(max_length=80, blank=True, editable=False)
+    # Vrai quand le dernier envoi du stock ou du prix vers Shopify a échoué : à renvoyer.
+    shopify_a_synchroniser = models.BooleanField(default=False, editable=False)
     # Recopiés du modèle à chaque enregistrement (voir save) : les listes, filtres et
     # calculs de marge s'appuient dessus.
     designation = models.CharField("désignation", max_length=200, unique=True)
@@ -180,6 +190,10 @@ class Reference(models.Model):
             if not self.sku:
                 couleur = slugify(self.couleur.nom)[:6].upper() if self.couleur_id else "U"
                 self.sku = f"MA{m.pk:04d}-{self.taille}-{couleur}"
+        if self.pk and self.shopify_variant_id:
+            ancien_sku = Reference.objects.filter(pk=self.pk).values_list("sku", flat=True).first()
+            if ancien_sku != self.sku:  # nouveau SKU : le lien Shopify sera recherché à nouveau
+                self.shopify_variant_id = self.shopify_inventory_item_id = ""
         super().save(*args, **kwargs)
 
     @property
@@ -228,6 +242,11 @@ class Vente(models.Model):
         "montant en espèces", max_digits=10, decimal_places=2, default=0,
         help_text="Part du total payée en espèces.",
     )
+    # Ventes créées à partir d'une commande Shopify : commande et ligne d'origine.
+    commande_shopify = models.ForeignKey(
+        "CommandeShopify", on_delete=models.SET_NULL, null=True, blank=True, related_name="ventes",
+    )
+    ligne_shopify = models.CharField(max_length=40, blank=True)
     # Compte qui a saisi la vente, pour la traçabilité. Une vente en ligne n'a pas de
     # vendeur (elle n'est attribuée à personne) mais garde la trace de qui l'a déclarée.
     saisie_par = models.ForeignKey(
@@ -327,3 +346,47 @@ class CorrectionPaiement(models.Model):
         ordering = ["-date"]
         verbose_name = "correction de paiement"
         verbose_name_plural = "corrections de paiement"
+
+
+class CommandeShopify(models.Model):
+    """Commande reçue de la boutique en ligne. Sert aussi à ne jamais l'enregistrer deux fois."""
+
+    shopify_id = models.CharField(max_length=40, unique=True)
+    nom = models.CharField("numéro", max_length=40)
+    date = models.DateTimeField()
+    annulee = models.BooleanField("annulée", default=False)
+    recue_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "commande Shopify"
+        verbose_name_plural = "commandes Shopify"
+
+    def __str__(self):
+        return self.nom
+
+
+class EvenementShopify(models.Model):
+    """Journal des échanges avec Shopify, consultable dans Administration → Shopify."""
+
+    class Sens(models.TextChoices):
+        ENVOI = "envoi", "Envoi vers Shopify"
+        RECEPTION = "reception", "Reçu de Shopify"
+
+    class Statut(models.TextChoices):
+        OK = "ok", "OK"
+        ERREUR = "erreur", "Erreur"
+        IGNORE = "ignore", "Ignoré"
+
+    date = models.DateTimeField(default=timezone.now, db_index=True)
+    sens = models.CharField(max_length=10, choices=Sens.choices)
+    action = models.CharField(max_length=60)
+    statut = models.CharField(max_length=10, choices=Statut.choices)
+    message = models.TextField(blank=True)
+    # Identifiant de notification Shopify : une notification reçue deux fois n'est traitée qu'une fois.
+    webhook_id = models.CharField(max_length=80, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "échange avec Shopify"
+        verbose_name_plural = "échanges avec Shopify"

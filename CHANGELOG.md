@@ -7,6 +7,20 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.0.0 — 16/11/2026
+
+- Couplage avec la boutique Shopify, par le SKU des variantes :
+  - le stock de l'outil est envoyé à Shopify après chaque vente, annulation, ajustement,
+    entrée en stock ou import Excel ; les changements de prix aussi ;
+  - les commandes Shopify deviennent des ventes « En ligne » (prix payé, réductions déduites)
+    et diminuent le stock ; annulations et retours remettent les articles en stock ;
+  - une même commande n'est jamais enregistrée deux fois ; les notifications non signées
+    par Shopify sont refusées
+- Administration → Shopify : état du couplage, test de connexion, création en brouillon des
+  produits absents de Shopify, renvoi complet du stock et des prix, journal des échanges
+- Administration → Commandes Shopify : liste des commandes reçues
+- Couplage inactif tant que les variables `SHOPIFY_*` ne sont pas renseignées sur Render
+
 ## 1.5.0 — 16/11/2026
 
 - Modèles et variantes : un modèle (nom, catégorie, coût, prix) se décline en variantes
