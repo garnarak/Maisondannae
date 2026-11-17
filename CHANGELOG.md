@@ -10,11 +10,13 @@ Le suffixe `-beta` indique une version de test.
 ## 2.1.0 — 17/11/2026
 
 - Couleur double (ex. « Blanc / Terracotta ») : dans « Nouveau modèle » et Stock → Modifier,
-  deux listes permettent d'associer deux couleurs ; la couleur double est ajoutée aux
-  variantes et à la liste des couleurs, et apparaît telle quelle dans Shopify et Excel
+  cocher deux couleurs puis « Couleur double » ; les couleurs sont associées dans l'ordre où
+  elles ont été cochées, la couleur double rejoint la liste des couleurs et apparaît telle
+  quelle dans Shopify et Excel
 - SKU d'une couleur double lisible (`…-M-BLA-TER`) ; deux couleurs aux noms proches ne
   bloquent plus la création des variantes (le SKU est numéroté)
 - Téléphone, page du modèle (Stock → Modifier) : affichage sur une seule colonne
+- Onglets du navigateur des pages Stock et Caisse : le titre n'affiche plus de code
 
 ## 2.0.1 — 16/11/2026
 

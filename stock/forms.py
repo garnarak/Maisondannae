@@ -27,12 +27,12 @@ class VariantesForm(forms.Form):
         help_text="Aucune couleur cochée : une seule variante par taille, sans couleur.",
     )
 
-    bicolore_1 = forms.ModelChoiceField(
-        queryset=Couleur.objects.exclude(nom__contains=" / "), required=False, label="Couleur 1", empty_label="—",
+    couleur_double = forms.BooleanField(
+        required=False, label="Couleur double : associer les 2 couleurs cochées (ex. Blanc / Terracotta)",
     )
-    bicolore_2 = forms.ModelChoiceField(
-        queryset=Couleur.objects.exclude(nom__contains=" / "), required=False, label="Couleur 2", empty_label="—",
-    )
+    # Ordre dans lequel les couleurs ont été cochées (rempli par la page) : « Blanc / Terracotta »
+    # et non « Terracotta / Blanc » si l'on a cliqué Blanc en premier.
+    ordre_couleurs = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, obligatoire=True, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,18 +40,18 @@ class VariantesForm(forms.Form):
 
     def clean(self):
         donnees = super().clean()
-        c1, c2 = donnees.get("bicolore_1"), donnees.get("bicolore_2")
-        if bool(c1) != bool(c2):
-            raise forms.ValidationError("Pour une couleur double, choisissez les deux couleurs.")
-        if c1 and c1 == c2:
-            raise forms.ValidationError("Pour une couleur double, choisissez deux couleurs différentes.")
-        if c1:
-            # « Blanc / Terracotta » devient une couleur de la liste, réutilisable ensuite.
-            double, _ = Couleur.objects.get_or_create(nom=f"{c1.nom} / {c2.nom}"[:40])
-            couleurs = list(donnees.get("couleurs") or [])
-            if double not in couleurs:
-                couleurs.append(double)
-            donnees["couleurs"] = couleurs
+        if not donnees.get("couleur_double"):
+            return donnees
+        couleurs = list(donnees.get("couleurs") or [])
+        if len(couleurs) != 2:
+            raise forms.ValidationError("Pour une couleur double, cochez exactement deux couleurs.")
+        if any(" / " in c.nom for c in couleurs):
+            raise forms.ValidationError("Une couleur double s'associe à partir de deux couleurs simples.")
+        ordre = [p for p in (donnees.get("ordre_couleurs") or "").split(",") if p.isdigit()]
+        couleurs.sort(key=lambda c: (ordre.index(str(c.pk)) if str(c.pk) in ordre else len(ordre), c.nom))
+        # « Blanc / Terracotta » devient une couleur de la liste, réutilisable ensuite.
+        double, _ = Couleur.objects.get_or_create(nom=f"{couleurs[0].nom} / {couleurs[1].nom}"[:40])
+        donnees["couleurs"] = [double]
         return donnees
 
     def clean_tailles(self):

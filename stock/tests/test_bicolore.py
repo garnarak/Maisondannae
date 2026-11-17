@@ -20,30 +20,44 @@ class CouleurDoubleTests(TestCase):
         base = {"categorie": self.robe.pk, "nom": "Robe rayée", "cout_achat": "25", "prix_vente": "69", "tailles": ["S", "M"]}
         return self.client.post(reverse("modele_create"), {**base, **donnees}, follow=True)
 
-    def test_creation_avec_une_couleur_double(self):
-        r = self.creer(couleurs=[self.noir.pk], bicolore_1=self.blanc.pk, bicolore_2=self.terra.pk)
+    def test_deux_couleurs_cochees_sans_couleur_double_donnent_deux_variantes_par_taille(self):
+        r = self.creer(couleurs=[self.blanc.pk, self.terra.pk])
         self.assertContains(r, "créé avec 4 variante(s)")
-        v = Modele.objects.get().variantes.get(taille="M", couleur__nom="Blanc / Terracotta")
+        self.assertFalse(Couleur.objects.filter(nom__contains=" / ").exists())
+
+    def test_couleur_double(self):
+        r = self.creer(couleurs=[self.blanc.pk, self.terra.pk], couleur_double="on")
+        self.assertContains(r, "créé avec 2 variante(s)")
+        v = Modele.objects.get().variantes.get(taille="M")
+        self.assertEqual(v.couleur.nom, "Blanc / Terracotta")
         self.assertEqual(v.designation, "Robe rayée — M · Blanc / Terracotta")
         self.assertEqual(v.sku, f"MA{v.modele.pk:04d}-M-BLA-TER")
-        # La couleur double rejoint la liste et se réutilise ensuite.
-        self.assertTrue(Couleur.objects.filter(nom="Blanc / Terracotta").exists())
-        self.creer(nom="Jupe rayée", bicolore_1=self.blanc.pk, bicolore_2=self.terra.pk)
+        # La couleur double rejoint la liste et se réutilise ensuite, sans doublon.
+        self.creer(nom="Jupe rayée", couleurs=[self.blanc.pk, self.terra.pk], couleur_double="on")
         self.assertEqual(Couleur.objects.filter(nom="Blanc / Terracotta").count(), 1)
+
+    def test_ordre_de_selection_respecte(self):
+        ordre = f"{self.terra.pk},{self.blanc.pk}"
+        self.creer(couleurs=[self.blanc.pk, self.terra.pk], couleur_double="on", ordre_couleurs=ordre)
+        self.assertTrue(Couleur.objects.filter(nom="Terracotta / Blanc").exists())
 
     def test_ajout_sur_la_page_du_modele(self):
         self.creer(couleurs=[self.noir.pk])
         modele = Modele.objects.get()
-        r = self.client.post(reverse("modele_edit", args=[modele.pk]),
-                             {"action": "variantes", "bicolore_1": self.blanc.pk, "bicolore_2": self.terra.pk}, follow=True)
+        r = self.client.post(reverse("modele_edit", args=[modele.pk]), {
+            "action": "variantes", "couleurs": [self.blanc.pk, self.terra.pk], "couleur_double": "on",
+        }, follow=True)
         self.assertContains(r, "2 variante(s) ajoutée(s)")
-        self.assertContains(r, "Blanc / Terracotta")
+        self.assertEqual(modele.variantes.filter(couleur__nom="Blanc / Terracotta").count(), 2)
 
-    def test_une_seule_couleur_ou_deux_fois_la_meme(self):
-        r = self.creer(bicolore_1=self.blanc.pk)
-        self.assertContains(r, "choisissez les deux couleurs")
-        r = self.creer(bicolore_1=self.blanc.pk, bicolore_2=self.blanc.pk)
-        self.assertContains(r, "deux couleurs différentes")
+    def test_il_faut_exactement_deux_couleurs_simples(self):
+        r = self.creer(couleurs=[self.blanc.pk], couleur_double="on")
+        self.assertContains(r, "cochez exactement deux couleurs")
+        r = self.creer(couleurs=[self.blanc.pk, self.terra.pk, self.noir.pk], couleur_double="on")
+        self.assertContains(r, "cochez exactement deux couleurs")
+        double = Couleur.objects.create(nom="Blanc / Noir")
+        r = self.creer(couleurs=[double.pk, self.terra.pk], couleur_double="on")
+        self.assertContains(r, "deux couleurs simples")
         self.assertFalse(Modele.objects.exists())
 
     def test_codes_proches_numerotes(self):
@@ -53,8 +67,12 @@ class CouleurDoubleTests(TestCase):
         skus = sorted(Modele.objects.get().variantes.values_list("sku", flat=True))
         self.assertEqual(len(set(skus)), 2)
 
-    def test_les_couleurs_doubles_ne_sont_pas_proposees_comme_couleur_1(self):
-        Couleur.objects.create(nom="Blanc / Noir")
-        r = self.client.get(reverse("modele_create"))
-        champ = r.context["variantes_form"].fields["bicolore_1"]
-        self.assertNotIn("Blanc / Noir", [c.nom for c in champ.queryset])
+
+class TitresDesPages(TestCase):
+    def test_pas_de_script_dans_le_titre(self):
+        admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
+        self.client.force_login(admin)
+        for nom in ("stock_list", "caisse"):
+            html = self.client.get(reverse(nom)).content.decode()
+            titre = html.split("<title>")[1].split("</title>")[0]
+            self.assertNotIn("script", titre)

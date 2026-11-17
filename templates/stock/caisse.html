@@ -1,18 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Caisse<script>
-  // Met à jour le montant à récupérer quand on change le fond laissé.
-  (function () {
-    var champ = document.getElementById("fond_laisse"), cible = document.getElementById("a-recuperer");
-    if (!champ || !cible) return;
-    var enCaisse = parseFloat(champ.dataset.enCaisse);
-    champ.addEventListener("input", function () {
-      var fond = parseFloat(champ.value.replace(",", "."));
-      var reste = isNaN(fond) ? enCaisse : Math.max(enCaisse - fond, 0);
-      cible.textContent = reste.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    });
-  })();
-</script>
-{% endblock %}
+{% block title %}Caisse{% endblock %}
 {% block content %}
 <h1>Caisse</h1>
 
