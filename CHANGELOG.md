@@ -14,6 +14,8 @@ Le suffixe `-beta` indique une version de test.
   Terracotta »), dans l'ordre où elles sont cochées ; la variante qui sera créée s'affiche
   sous les couleurs. Les autres couleurs d'un même modèle s'ajoutent ensuite, une par une,
   sur la page du modèle
+- Stock → Modifier, « Ajouter des tailles ou des couleurs » : la taille est obligatoire ; sans
+  taille sélectionnée, un message demande de la choisir et rien n'est ajouté
 - Seules les couleurs simples sont proposées en pastilles ; les couleurs doubles apparaissent
   telles quelles sur les variantes, dans Shopify et dans Excel
 - SKU d'une couleur double lisible (`…-M-BLA-TER`) ; deux couleurs aux noms proches ne

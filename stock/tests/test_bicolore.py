@@ -52,7 +52,7 @@ class CouleurDoubleTests(TestCase):
         self.creer(couleurs=[self.noir.pk])
         modele = Modele.objects.get()
         r = self.client.post(reverse("modele_edit", args=[modele.pk]),
-                             {"action": "variantes", "couleurs": [self.blanc.pk, self.terra.pk]}, follow=True)
+                             {"action": "variantes", "tailles": ["S", "M"], "couleurs": [self.blanc.pk, self.terra.pk]}, follow=True)
         self.assertContains(r, "2 variante(s) ajoutée(s)")
         self.assertEqual(modele.variantes.filter(couleur__nom="Blanc / Terracotta").count(), 2)
         # La variante bicolore existante est affichée dans le tableau du modèle.
@@ -68,7 +68,7 @@ class CouleurDoubleTests(TestCase):
         b, _ = Couleur.objects.get_or_create(nom="Rouge bordelais")
         self.creer(tailles=["M"], couleurs=[a.pk])
         modele = Modele.objects.get()
-        self.client.post(reverse("modele_edit", args=[modele.pk]), {"action": "variantes", "couleurs": [b.pk]})
+        self.client.post(reverse("modele_edit", args=[modele.pk]), {"action": "variantes", "tailles": ["M"], "couleurs": [b.pk]})
         skus = list(modele.variantes.values_list("sku", flat=True))
         self.assertEqual(len(set(skus)), 2)
 

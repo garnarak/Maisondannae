@@ -270,7 +270,7 @@ def modele_edit(request, pk):
     modele = get_object_or_404(Modele, pk=pk)
     action = request.POST.get("action") if request.method == "POST" else None
     form = ModeleForm(request.POST if action == "modele" else None, instance=modele)
-    variantes_form = VariantesForm(request.POST if action == "variantes" else None, obligatoire=False)
+    variantes_form = VariantesForm(request.POST if action == "variantes" else None)
     variantes = list(modele.variantes.select_related("couleur"))
     variantes.sort(key=lambda v: (ORDRE_TAILLES.get(v.taille, 99), v.couleur.nom if v.couleur else ""))
 
@@ -280,8 +280,6 @@ def modele_edit(request, pk):
         return redirect("modele_edit", pk=modele.pk)
     if action == "variantes" and variantes_form.is_valid():
         tailles, couleurs = variantes_form.cleaned_data["tailles"], list(variantes_form.cleaned_data["couleurs"])
-        if not tailles:  # couleurs ajoutées aux tailles déjà présentes
-            tailles = sorted({v.taille for v in variantes}, key=lambda t: ORDRE_TAILLES.get(t, 99))
         n = services.ajouter_variantes(modele, tailles, couleurs)
         messages.success(request, f"{n} variante(s) ajoutée(s)." if n else "Ces variantes existent déjà.")
         unique = modele.variantes.filter(taille=Taille.TU, couleur__isnull=True).first()
@@ -293,6 +291,9 @@ def modele_edit(request, pk):
                                  "répartissez-les sur les nouvelles variantes (entrée en stock), puis mettez-la à 0 "
                                  "avec « Ajuster » ; elle sera alors masquée.")
         return redirect("modele_edit", pk=modele.pk)
+    if action == "variantes" and not variantes_form.is_valid():
+        messages.error(request, "Variantes non ajoutées : " + " ".join(
+            e for erreurs in variantes_form.errors.values() for e in erreurs))
     if action == "entree":
         quantites, erreur = {}, False
         for v in variantes:

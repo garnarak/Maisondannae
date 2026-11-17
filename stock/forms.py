@@ -32,10 +32,6 @@ class VariantesForm(forms.Form):
     # et non « Terracotta / Blanc » si l'on a cliqué Blanc en premier.
     ordre_couleurs = forms.CharField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, obligatoire=True, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.obligatoire = obligatoire
-
     def clean(self):
         """Renvoie dans « couleurs » la couleur de la variante : aucune, une simple, ou la
         couleur double formée des deux couleurs cochées (créée au besoin, sans apparaître
@@ -55,8 +51,8 @@ class VariantesForm(forms.Form):
         tailles = self.cleaned_data["tailles"]
         if Taille.TU in tailles and len(tailles) > 1:
             raise forms.ValidationError("« Taille unique » ne se combine pas avec d'autres tailles.")
-        if self.obligatoire and not tailles:
-            raise forms.ValidationError("Cochez au moins une taille (ou « Taille unique »).")
+        if not tailles:
+            raise forms.ValidationError("Sélectionnez au moins une taille (ou « Taille unique »).")
         return tailles
 
 
