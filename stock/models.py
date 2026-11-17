@@ -188,13 +188,27 @@ class Reference(models.Model):
                 self.active = False
             self.designation = m.nom if self.est_unique else f"{m.nom} — {self.libelle_variante}"
             if not self.sku:
-                couleur = slugify(self.couleur.nom)[:6].upper() if self.couleur_id else "U"
-                self.sku = f"MA{m.pk:04d}-{self.taille}-{couleur}"
+                self.sku = self._sku_libre(f"MA{m.pk:04d}-{self.taille}-{self._code_couleur()}")
         if self.pk and self.shopify_variant_id:
             ancien_sku = Reference.objects.filter(pk=self.pk).values_list("sku", flat=True).first()
             if ancien_sku != self.sku:  # nouveau SKU : le lien Shopify sera recherché à nouveau
                 self.shopify_variant_id = self.shopify_inventory_item_id = ""
         super().save(*args, **kwargs)
+
+    def _code_couleur(self):
+        if not self.couleur_id:
+            return "U"
+        parties = [p for p in self.couleur.nom.split("/") if p.strip()]
+        if len(parties) > 1:  # couleur double : « Blanc / Terracotta » → BLA-TER
+            return "-".join(slugify(p)[:3].upper() for p in parties)
+        return slugify(self.couleur.nom)[:6].upper().strip("-")
+
+    def _sku_libre(self, sku):
+        """Deux couleurs aux noms proches peuvent donner le même code : on numérote."""
+        candidat, n = sku, 2
+        while Reference.objects.filter(sku=candidat).exclude(pk=self.pk).exists():
+            candidat, n = f"{sku}{n}", n + 1
+        return candidat
 
     @property
     def marge_unitaire(self):

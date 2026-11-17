@@ -1,14 +1,6 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Stock<script>
-  // Une vente en ligne s'enregistre sans écran de paiement : on demande confirmation.
-  function confirmerVenteEnLigne(bouton) {
-    var quantite = bouton.form.querySelector("[name=quantite]").value || "1";
-    return confirm("Déclarer une vente EN LIGNE ?\n\n" + quantite + " × " + bouton.dataset.article +
-                   "\n\nElle ne sera attribuée à aucune vendeuse.");
-  }
-</script>
-{% endblock %}
+{% block title %}Stock{% endblock %}
 {% block content %}
 <div class="toolbar">
   <h1>Stock <span class="compte-stock">{{ pieces_en_stock }} article{{ pieces_en_stock|pluralize }}{% if filtre_actif %} dans la sélection{% endif %} · {{ nb_references }} référence{{ nb_references|pluralize }}</span></h1>

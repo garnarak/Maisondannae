@@ -43,7 +43,6 @@
     <form method="post">{% csrf_token %}
       <input type="hidden" name="action" value="variantes">
       {% include "stock/_champs.html" with form=variantes_form %}
-      <small class="muted">Cocher seulement des couleurs les ajoute à toutes les tailles existantes.</small>
       <button class="block">Ajouter les variantes</button>
     </form>
   </section>

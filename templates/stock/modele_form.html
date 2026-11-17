@@ -7,7 +7,7 @@
   <form method="post">{% csrf_token %}
     {% include "stock/_champs.html" with form=form %}
     <h2>Tailles et couleurs</h2>
-    <p class="muted">Une variante est créée pour chaque taille × couleur cochée. Le prix et le coût sont les mêmes pour toutes.</p>
+    <p class="muted">Une variante est créée pour chaque taille cochée, dans la couleur choisie. Pour d'autres couleurs du même modèle, ajoutez-les ensuite sur la page du modèle. Le prix et le coût sont les mêmes pour toutes.</p>
     {% include "stock/_champs.html" with form=variantes_form %}
     <button class="primary block">Créer le modèle</button>
   </form>

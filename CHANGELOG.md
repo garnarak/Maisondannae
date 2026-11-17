@@ -7,6 +7,22 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.1.0 — 17/11/2026
+
+- Couleurs d'une variante (« Nouveau modèle » et Stock → Modifier) : une couleur cochée donne
+  une variante unie, **deux couleurs cochées donnent une variante bicolore** (ex. « Blanc /
+  Terracotta »), dans l'ordre où elles sont cochées ; la variante qui sera créée s'affiche
+  sous les couleurs. Les autres couleurs d'un même modèle s'ajoutent ensuite, une par une,
+  sur la page du modèle
+- Stock → Modifier, « Ajouter des tailles ou des couleurs » : la taille est obligatoire ; sans
+  taille sélectionnée, un message demande de la choisir et rien n'est ajouté
+- Seules les couleurs simples sont proposées en pastilles ; les couleurs doubles apparaissent
+  telles quelles sur les variantes, dans Shopify et dans Excel
+- SKU d'une couleur double lisible (`…-M-BLA-TER`) ; deux couleurs aux noms proches ne
+  bloquent plus la création des variantes (le SKU est numéroté)
+- Téléphone, page du modèle (Stock → Modifier) : affichage sur une seule colonne
+- Onglets du navigateur des pages Stock et Caisse : le titre n'affiche plus de code
+
 ## 2.0.1 — 16/11/2026
 
 - Shopify, « Créer les produits manquants » :

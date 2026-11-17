@@ -22,21 +22,37 @@ class VariantesForm(forms.Form):
         choices=Taille.choices, widget=forms.CheckboxSelectMultiple, required=False,
         help_text="« Taille unique » pour un article sans taille.",
     )
+    # Seules les couleurs simples sont proposées : en cocher deux crée une variante bicolore.
     couleurs = forms.ModelMultipleChoiceField(
-        queryset=Couleur.objects.all(), widget=forms.CheckboxSelectMultiple, required=False,
-        help_text="Aucune couleur cochée : une seule variante par taille, sans couleur.",
+        queryset=Couleur.objects.exclude(nom__contains="/"), widget=forms.CheckboxSelectMultiple, required=False,
+        help_text="Une couleur : variante de cette couleur. Deux couleurs : variante bicolore (ex. Blanc / Terracotta), "
+                  "dans l'ordre où vous les cochez. Aucune : variante sans couleur.",
     )
+    # Ordre dans lequel les couleurs ont été cochées (rempli par la page) : « Blanc / Terracotta »
+    # et non « Terracotta / Blanc » si l'on a cliqué Blanc en premier.
+    ordre_couleurs = forms.CharField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, obligatoire=True, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.obligatoire = obligatoire
+    def clean(self):
+        """Renvoie dans « couleurs » la couleur de la variante : aucune, une simple, ou la
+        couleur double formée des deux couleurs cochées (créée au besoin, sans apparaître
+        dans les pastilles)."""
+        donnees = super().clean()
+        couleurs = list(donnees.get("couleurs") or [])
+        if len(couleurs) > 2:
+            raise forms.ValidationError("Cochez au plus deux couleurs : une pour une variante unie, deux pour une variante bicolore.")
+        if len(couleurs) == 2:
+            ordre = [p for p in (donnees.get("ordre_couleurs") or "").split(",") if p.isdigit()]
+            couleurs.sort(key=lambda c: (ordre.index(str(c.pk)) if str(c.pk) in ordre else len(ordre), c.nom))
+            double, _ = Couleur.objects.get_or_create(nom=f"{couleurs[0].nom} / {couleurs[1].nom}"[:40])
+            donnees["couleurs"] = [double]
+        return donnees
 
     def clean_tailles(self):
         tailles = self.cleaned_data["tailles"]
         if Taille.TU in tailles and len(tailles) > 1:
             raise forms.ValidationError("« Taille unique » ne se combine pas avec d'autres tailles.")
-        if self.obligatoire and not tailles:
-            raise forms.ValidationError("Cochez au moins une taille (ou « Taille unique »).")
+        if not tailles:
+            raise forms.ValidationError("Sélectionnez au moins une taille (ou « Taille unique »).")
         return tailles
 
 

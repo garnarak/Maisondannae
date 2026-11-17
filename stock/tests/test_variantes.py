@@ -24,17 +24,20 @@ class VariantesTests(TestCase):
         base = {"categorie": self.robe.pk, "nom": "Robe portefeuille", "cout_achat": "25", "prix_vente": "69"}
         return self.client.post(reverse("modele_create"), {**base, **donnees}, follow=True)
 
-    def test_creation_taille_par_couleur(self):
-        r = self._creer(tailles=["L", "S", "M"], couleurs=[self.noir.pk, self.ecru.pk])
-        self.assertContains(r, "créé avec 6 variante(s)")
+    def test_creation_une_variante_par_taille(self):
+        r = self._creer(tailles=["L", "S", "M"], couleurs=[self.noir.pk])
+        self.assertContains(r, "créé avec 3 variante(s)")
         modele = Modele.objects.get()
         variantes = modele.variantes.all()
-        self.assertEqual(len(variantes), 6)
         self.assertEqual({v.prix_vente for v in variantes}, {Decimal("69.00")})
         self.assertEqual({v.categorie for v in variantes}, {self.robe})
         self.assertIn("Robe portefeuille — M · Noir", {v.designation for v in variantes})
-        self.assertEqual(len({v.sku for v in variantes}), 6)
+        self.assertEqual(len({v.sku for v in variantes}), 3)
         self.assertEqual(r.redirect_chain[-1][0], reverse("modele_edit", args=[modele.pk]))
+        # Une autre couleur s'ajoute ensuite depuis la page du modèle, pour les tailles choisies.
+        self.client.post(reverse("modele_edit", args=[modele.pk]),
+                         {"action": "variantes", "tailles": ["S", "M", "L"], "couleurs": [self.ecru.pk]})
+        self.assertEqual(modele.variantes.count(), 6)
 
     def test_taille_unique_sans_couleur(self):
         self._creer(tailles=["TU"])
@@ -84,8 +87,11 @@ class VariantesTests(TestCase):
         url = reverse("modele_edit", args=[modele.pk])
         self.client.post(url, {"action": "variantes", "tailles": ["XL"]})
         self.assertEqual(modele.variantes.count(), 3)
-        # Seulement des couleurs : ajoutées à toutes les tailles existantes.
-        self.client.post(url, {"action": "variantes", "couleurs": [self.noir.pk]})
+        # Une couleur sans taille : on demande de choisir la taille, rien n'est créé.
+        r = self.client.post(url, {"action": "variantes", "couleurs": [self.noir.pk]}, follow=True)
+        self.assertContains(r, "Sélectionnez au moins une taille")
+        self.assertFalse(modele.variantes.filter(couleur=self.noir).exists())
+        self.client.post(url, {"action": "variantes", "tailles": ["S", "M", "XL"], "couleurs": [self.noir.pk]})
         self.assertEqual(modele.variantes.filter(couleur=self.noir).count(), 3)
         r = self.client.post(url, {"action": "variantes", "tailles": ["S"]}, follow=True)
         self.assertContains(r, "existent déjà")
