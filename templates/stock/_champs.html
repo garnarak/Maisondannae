@@ -3,9 +3,6 @@
 {% for field in form %}
   {% if field.is_hidden %}
   {{ field }}
-  {% elif field.name == "couleur_double" %}
-  <label class="check couleur-double">{{ field }} {{ field.label }}</label>
-  <small class="muted" data-apercu-double hidden></small>
   {% elif field.field.widget.input_type == "checkbox" and not field.field.widget.allow_multiple_selected %}
   <label class="check">{{ field }} {{ field.label }}</label>
   {% elif field.field.widget.allow_multiple_selected %}
@@ -19,41 +16,43 @@
   <label>{{ field.label }} {{ field }}</label>
   {% endif %}
   {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+  {% if field.name == "couleurs" %}<small class="apercu-couleur" data-apercu-couleur hidden></small>{% endif %}
   {% for e in field.errors %}<div class="error">{{ e }}</div>{% endfor %}
 {% endfor %}
-{% if form.couleur_double %}
+{% if form.ordre_couleurs %}
 <script>
-  // Couleur double : retient l'ordre dans lequel les couleurs sont cochées et affiche le résultat.
+  // Couleurs : retient l'ordre dans lequel elles sont cochées et annonce la variante créée.
   (function () {
     var ordre = document.getElementById("{{ form.ordre_couleurs.id_for_label }}");
-    var double = document.getElementById("{{ form.couleur_double.id_for_label }}");
-    if (!ordre || !double) return;
-    var formulaire = double.form, apercu = formulaire.querySelector("[data-apercu-double]");
+    if (!ordre) return;
+    var formulaire = ordre.form, apercu = formulaire.querySelector("[data-apercu-couleur]");
     var cases = formulaire.querySelectorAll('input[name="{{ form.couleurs.html_name }}"]');
     var liste = ordre.value ? ordre.value.split(",") : [];
     function nom(v) {
       for (var i = 0; i < cases.length; i++) if (cases[i].value === v) return cases[i].parentNode.textContent.trim();
       return "";
     }
-    function majApercu() {
-      var cochees = liste.filter(function (v) { return formulaire.querySelector('input[name="{{ form.couleurs.html_name }}"][value="' + v + '"]:checked'); });
-      ordre.value = cochees.join(",");
-      if (!double.checked) { apercu.hidden = true; return; }
-      apercu.hidden = false;
-      apercu.textContent = cochees.length === 2
-        ? "Couleur créée : " + nom(cochees[0]) + " / " + nom(cochees[1]) + " (dans l'ordre où vous les avez cochées)."
-        : "Cochez exactement deux couleurs.";
+    function maj() {
+      liste = liste.filter(function (v) {
+        return formulaire.querySelector('input[name="{{ form.couleurs.html_name }}"][value="' + v + '"]:checked');
+      });
+      ordre.value = liste.join(",");
+      apercu.hidden = liste.length === 0;
+      apercu.classList.toggle("erreur", liste.length > 2);
+      if (liste.length === 1) apercu.textContent = "Variante de couleur : " + nom(liste[0]);
+      else if (liste.length === 2) apercu.textContent = "Variante bicolore : " + nom(liste[0]) + " / " + nom(liste[1]);
+      else if (liste.length > 2) apercu.textContent = "Cochez au plus deux couleurs.";
     }
     for (var i = 0; i < cases.length; i++) {
       if (cases[i].checked && liste.indexOf(cases[i].value) < 0) liste.push(cases[i].value);
       cases[i].addEventListener("change", function () {
-        liste = liste.filter(function (v) { return v !== this.value; }, this);
-        if (this.checked) liste.push(this.value);
-        majApercu();
+        var v = this.value;
+        liste = liste.filter(function (x) { return x !== v; });
+        if (this.checked) liste.push(v);
+        maj();
       });
     }
-    double.addEventListener("change", majApercu);
-    majApercu();
+    maj();
   })();
 </script>
 {% endif %}

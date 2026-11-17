@@ -24,17 +24,19 @@ class VariantesTests(TestCase):
         base = {"categorie": self.robe.pk, "nom": "Robe portefeuille", "cout_achat": "25", "prix_vente": "69"}
         return self.client.post(reverse("modele_create"), {**base, **donnees}, follow=True)
 
-    def test_creation_taille_par_couleur(self):
-        r = self._creer(tailles=["L", "S", "M"], couleurs=[self.noir.pk, self.ecru.pk])
-        self.assertContains(r, "créé avec 6 variante(s)")
+    def test_creation_une_variante_par_taille(self):
+        r = self._creer(tailles=["L", "S", "M"], couleurs=[self.noir.pk])
+        self.assertContains(r, "créé avec 3 variante(s)")
         modele = Modele.objects.get()
         variantes = modele.variantes.all()
-        self.assertEqual(len(variantes), 6)
         self.assertEqual({v.prix_vente for v in variantes}, {Decimal("69.00")})
         self.assertEqual({v.categorie for v in variantes}, {self.robe})
         self.assertIn("Robe portefeuille — M · Noir", {v.designation for v in variantes})
-        self.assertEqual(len({v.sku for v in variantes}), 6)
+        self.assertEqual(len({v.sku for v in variantes}), 3)
         self.assertEqual(r.redirect_chain[-1][0], reverse("modele_edit", args=[modele.pk]))
+        # Une autre couleur s'ajoute ensuite à toutes les tailles depuis la page du modèle.
+        self.client.post(reverse("modele_edit", args=[modele.pk]), {"action": "variantes", "couleurs": [self.ecru.pk]})
+        self.assertEqual(modele.variantes.count(), 6)
 
     def test_taille_unique_sans_couleur(self):
         self._creer(tailles=["TU"])

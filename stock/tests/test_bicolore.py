@@ -5,6 +5,9 @@ from stock.models import Categorie, Couleur, Modele, User
 
 
 class CouleurDoubleTests(TestCase):
+    """Cocher deux couleurs = une variante bicolore ; les couleurs doubles ne sont jamais
+    proposées comme pastilles."""
+
     @classmethod
     def setUpTestData(cls):
         cls.admin = User.objects.create_user("garnik", password="x", role=User.Role.ADMIN)
@@ -20,51 +23,53 @@ class CouleurDoubleTests(TestCase):
         base = {"categorie": self.robe.pk, "nom": "Robe rayée", "cout_achat": "25", "prix_vente": "69", "tailles": ["S", "M"]}
         return self.client.post(reverse("modele_create"), {**base, **donnees}, follow=True)
 
-    def test_deux_couleurs_cochees_sans_couleur_double_donnent_deux_variantes_par_taille(self):
+    def test_deux_couleurs_cochees_une_variante_bicolore_par_taille(self):
         r = self.creer(couleurs=[self.blanc.pk, self.terra.pk])
-        self.assertContains(r, "créé avec 4 variante(s)")
-        self.assertFalse(Couleur.objects.filter(nom__contains=" / ").exists())
-
-    def test_couleur_double(self):
-        r = self.creer(couleurs=[self.blanc.pk, self.terra.pk], couleur_double="on")
         self.assertContains(r, "créé avec 2 variante(s)")
         v = Modele.objects.get().variantes.get(taille="M")
         self.assertEqual(v.couleur.nom, "Blanc / Terracotta")
         self.assertEqual(v.designation, "Robe rayée — M · Blanc / Terracotta")
         self.assertEqual(v.sku, f"MA{v.modele.pk:04d}-M-BLA-TER")
-        # La couleur double rejoint la liste et se réutilise ensuite, sans doublon.
-        self.creer(nom="Jupe rayée", couleurs=[self.blanc.pk, self.terra.pk], couleur_double="on")
+        # Recréée à l'identique pour un autre modèle, sans doublon dans les couleurs.
+        self.creer(nom="Jupe rayée", couleurs=[self.blanc.pk, self.terra.pk])
         self.assertEqual(Couleur.objects.filter(nom="Blanc / Terracotta").count(), 1)
 
+    def test_une_couleur_une_variante_unie(self):
+        self.creer(couleurs=[self.noir.pk])
+        self.assertEqual({v.couleur.nom for v in Modele.objects.get().variantes.all()}, {"Noir"})
+
     def test_ordre_de_selection_respecte(self):
-        ordre = f"{self.terra.pk},{self.blanc.pk}"
-        self.creer(couleurs=[self.blanc.pk, self.terra.pk], couleur_double="on", ordre_couleurs=ordre)
+        self.creer(couleurs=[self.blanc.pk, self.terra.pk], ordre_couleurs=f"{self.terra.pk},{self.blanc.pk}")
         self.assertTrue(Couleur.objects.filter(nom="Terracotta / Blanc").exists())
+
+    def test_les_couleurs_doubles_ne_sont_pas_des_pastilles(self):
+        Couleur.objects.create(nom="Taupe / Chocolat")
+        r = self.client.get(reverse("modele_create"))
+        self.assertNotContains(r, "Taupe / Chocolat")
+        self.assertContains(r, "Blanc")
 
     def test_ajout_sur_la_page_du_modele(self):
         self.creer(couleurs=[self.noir.pk])
         modele = Modele.objects.get()
-        r = self.client.post(reverse("modele_edit", args=[modele.pk]), {
-            "action": "variantes", "couleurs": [self.blanc.pk, self.terra.pk], "couleur_double": "on",
-        }, follow=True)
+        r = self.client.post(reverse("modele_edit", args=[modele.pk]),
+                             {"action": "variantes", "couleurs": [self.blanc.pk, self.terra.pk]}, follow=True)
         self.assertContains(r, "2 variante(s) ajoutée(s)")
         self.assertEqual(modele.variantes.filter(couleur__nom="Blanc / Terracotta").count(), 2)
+        # La variante bicolore existante est affichée dans le tableau du modèle.
+        self.assertContains(r, "Blanc / Terracotta")
 
-    def test_il_faut_exactement_deux_couleurs_simples(self):
-        r = self.creer(couleurs=[self.blanc.pk], couleur_double="on")
-        self.assertContains(r, "cochez exactement deux couleurs")
-        r = self.creer(couleurs=[self.blanc.pk, self.terra.pk, self.noir.pk], couleur_double="on")
-        self.assertContains(r, "cochez exactement deux couleurs")
-        double = Couleur.objects.create(nom="Blanc / Noir")
-        r = self.creer(couleurs=[double.pk, self.terra.pk], couleur_double="on")
-        self.assertContains(r, "deux couleurs simples")
+    def test_au_plus_deux_couleurs(self):
+        r = self.creer(couleurs=[self.blanc.pk, self.terra.pk, self.noir.pk])
+        self.assertContains(r, "Cochez au plus deux couleurs")
         self.assertFalse(Modele.objects.exists())
 
     def test_codes_proches_numerotes(self):
         a, _ = Couleur.objects.get_or_create(nom="Rouge bordeaux")
         b, _ = Couleur.objects.get_or_create(nom="Rouge bordelais")
-        self.creer(tailles=["M"], couleurs=[a.pk, b.pk])
-        skus = sorted(Modele.objects.get().variantes.values_list("sku", flat=True))
+        self.creer(tailles=["M"], couleurs=[a.pk])
+        modele = Modele.objects.get()
+        self.client.post(reverse("modele_edit", args=[modele.pk]), {"action": "variantes", "couleurs": [b.pk]})
+        skus = list(modele.variantes.values_list("sku", flat=True))
         self.assertEqual(len(set(skus)), 2)
 
 
