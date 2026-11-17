@@ -1,7 +1,14 @@
 {# Affiche les champs d'un formulaire : cases à cocher multiples en pastilles, le reste en libellé + champ. #}
 {{ form.non_field_errors }}
 {% for field in form %}
-  {% if field.field.widget.input_type == "checkbox" and not field.field.widget.allow_multiple_selected %}
+  {% if field.name == "bicolore_1" %}
+  <fieldset class="bicolore">
+    <legend>Couleur double (ex. Blanc / Terracotta)</legend>
+    <div class="bicolore-choix">{{ form.bicolore_1 }}<span>/</span>{{ form.bicolore_2 }}</div>
+    <small class="muted">Facultatif : ajoutée aux couleurs cochées ci-dessus, et à la liste des couleurs pour la suite.</small>
+  </fieldset>
+  {% elif field.name == "bicolore_2" %}
+  {% elif field.field.widget.input_type == "checkbox" and not field.field.widget.allow_multiple_selected %}
   <label class="check">{{ field }} {{ field.label }}</label>
   {% elif field.field.widget.allow_multiple_selected %}
   <fieldset class="pastilles">

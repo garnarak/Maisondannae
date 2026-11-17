@@ -27,9 +27,32 @@ class VariantesForm(forms.Form):
         help_text="Aucune couleur cochée : une seule variante par taille, sans couleur.",
     )
 
+    bicolore_1 = forms.ModelChoiceField(
+        queryset=Couleur.objects.exclude(nom__contains=" / "), required=False, label="Couleur 1", empty_label="—",
+    )
+    bicolore_2 = forms.ModelChoiceField(
+        queryset=Couleur.objects.exclude(nom__contains=" / "), required=False, label="Couleur 2", empty_label="—",
+    )
+
     def __init__(self, *args, obligatoire=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.obligatoire = obligatoire
+
+    def clean(self):
+        donnees = super().clean()
+        c1, c2 = donnees.get("bicolore_1"), donnees.get("bicolore_2")
+        if bool(c1) != bool(c2):
+            raise forms.ValidationError("Pour une couleur double, choisissez les deux couleurs.")
+        if c1 and c1 == c2:
+            raise forms.ValidationError("Pour une couleur double, choisissez deux couleurs différentes.")
+        if c1:
+            # « Blanc / Terracotta » devient une couleur de la liste, réutilisable ensuite.
+            double, _ = Couleur.objects.get_or_create(nom=f"{c1.nom} / {c2.nom}"[:40])
+            couleurs = list(donnees.get("couleurs") or [])
+            if double not in couleurs:
+                couleurs.append(double)
+            donnees["couleurs"] = couleurs
+        return donnees
 
     def clean_tailles(self):
         tailles = self.cleaned_data["tailles"]
