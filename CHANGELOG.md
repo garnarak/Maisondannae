@@ -16,6 +16,8 @@ Le suffixe `-beta` indique une version de test.
   automatiquement archivé, donc retiré de la boutique en ligne ; s'il revient en stock, il
   retrouve son statut d'avant (actif ou brouillon). Un produit archivé à la main n'est jamais
   remis en ligne par l'outil
+- Stock : plus de bouton « En ligne » ; les ventes en ligne arrivent uniquement de Shopify
+  (elles restent visibles dans Ventes → Ventes en ligne)
 - Shopify, « Créer les produits manquants » : les modèles épuisés ne sont plus créés
 - Shopify, « Tout renvoyer à Shopify » : se fait en arrière-plan (suivi dans le journal) et
   archive au passage les produits déjà épuisés

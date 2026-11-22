@@ -24,7 +24,7 @@ ajustements de stock et synthèse mensuelle de la marge. Utilisable sur ordinate
 - **Ajustement** : réception, casse, inventaire… Tracé avec un motif, mais n'entre pas
   dans la marge. Le stock ne peut jamais devenir négatif.
 - **Marge** = (prix de vente − coût d'achat) × quantité, sur les ventes du mois.
-- Chaque vente porte un `canal` (magasin / en ligne) pour préparer la boutique en ligne.
+- Chaque vente porte un `canal` : boutique (saisie dans l'outil) ou en ligne (commande Shopify).
 
 ## Lancer en local
 

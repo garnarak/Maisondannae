@@ -86,28 +86,12 @@ def ruptures(request):
 def vendre(request, pk):
     ref = get_object_or_404(Reference, pk=pk, active=True)
     form = VenteForm(request.POST)
-    if form.is_valid() and form.cleaned_data["canal"] == Vente.Canal.MAGASIN:
-        # Vente en boutique : le mode de paiement est choisi sur l'écran suivant.
+    if form.is_valid():
+        # Vente en boutique : le mode de paiement est choisi sur l'écran suivant. Les ventes en
+        # ligne arrivent de Shopify (depuis 2.2.0, plus de bouton « En ligne » dans le stock).
         url = reverse("paiement", args=[ref.pk])
         return redirect(f"{url}?quantite={form.cleaned_data['quantite']}&remise_pct={form.cleaned_data['remise_pct']}")
-    if form.is_valid():
-        try:
-            vente = services.enregistrer_vente(
-                ref.pk,
-                form.cleaned_data["quantite"],
-                request.user,
-                canal=form.cleaned_data["canal"],
-                remise_pct=form.cleaned_data["remise_pct"],
-            )
-        except services.StockInsuffisant as e:
-            messages.error(request, f"{ref} : {e}")
-        else:
-            prix = formats.number_format(vente.prix_unitaire, 2, use_l10n=True)
-            solde = f" soldé −{vente.remise_pct} % à {prix} € pièce" if vente.remise_pct else ""
-            canal = " en ligne" if vente.canal == Vente.Canal.EN_LIGNE else " en boutique"
-            messages.success(request, f"Vente{canal} enregistrée : {vente.quantite} × {ref}{solde}.")
-    else:
-        messages.error(request, "Quantité ou solde invalide.")
+    messages.error(request, "Quantité ou solde invalide.")
     return redirect(request.POST.get("next") or "stock_list")
 
 

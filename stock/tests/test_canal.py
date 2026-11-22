@@ -17,16 +17,13 @@ class VentesEnLigneTests(TestCase):
             designation="Robe lin", cout_achat=Decimal("30.00"), prix_vente=Decimal("50.00"), quantite=10
         )
 
-    def test_la_vendeuse_declare_une_vente_en_ligne(self):
+    def test_plus_de_vente_en_ligne_depuis_le_stock(self):
+        # Depuis 2.2.0, les ventes en ligne arrivent de Shopify : un ancien formulaire « En ligne »
+        # mène à l'écran de paiement d'une vente en boutique, rien n'est enregistré en ligne.
         self.client.force_login(self.lea)
-        r = self.client.post(
-            reverse("vendre", args=[self.robe.pk]), {"quantite": 2, "canal": "en_ligne"}, follow=True
-        )
-        self.assertContains(r, "Vente en ligne enregistrée : 2 × Robe lin")
-        vente = Vente.objects.get()
-        self.assertEqual(vente.canal, Vente.Canal.EN_LIGNE)
-        self.robe.refresh_from_db()
-        self.assertEqual(self.robe.quantite, 8)  # le stock est partagé entre les deux canaux
+        r = self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 2, "canal": "en_ligne"})
+        self.assertRedirects(r, reverse("paiement", args=[self.robe.pk]) + "?quantite=2&remise_pct=0")
+        self.assertFalse(Vente.objects.exists())
 
     def test_par_defaut_la_vente_est_en_boutique(self):
         self.client.force_login(self.lea)
@@ -40,16 +37,12 @@ class VentesEnLigneTests(TestCase):
         self.assertContains(r, "Vente en boutique enregistrée")
         self.assertEqual(Vente.objects.get().canal, Vente.Canal.MAGASIN)
 
-    def test_canal_inconnu_refuse(self):
-        self.client.force_login(self.lea)
-        self.client.post(reverse("vendre", args=[self.robe.pk]), {"quantite": 1, "canal": "marche"})
-        self.assertFalse(Vente.objects.exists())
-
-    def test_les_deux_boutons_sont_proposes(self):
+    def test_un_seul_bouton_vendre(self):
         self.client.force_login(self.lea)
         r = self.client.get(reverse("stock_list"))
-        self.assertContains(r, 'name="canal" value="magasin"')
-        self.assertContains(r, 'name="canal" value="en_ligne"')
+        self.assertContains(r, ">Vendre</button>")
+        self.assertNotContains(r, ">En ligne</button>")
+        self.assertNotContains(r, "confirmerVenteEnLigne")
 
     def test_repartition_boutique_en_ligne(self):
         vendre(self.robe.pk, 1, self.lea)

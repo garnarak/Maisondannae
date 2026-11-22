@@ -70,13 +70,6 @@ class CategoriesTests(TestCase):
         self.client.post("/admin/stock/categorie/add/", {"nom": "Short"})
         self.assertFalse(Categorie.objects.filter(nom="Short").exists())
 
-    def test_confirmation_avant_vente_en_ligne(self):
-        Reference.objects.create(designation="Pull angora", categorie=self.pull, cout_achat=1, prix_vente=2, quantite=1)
-        self.client.force_login(self.lea)
-        r = self.client.get(reverse("stock_list"))
-        self.assertContains(r, 'onclick="return confirmerVenteEnLigne(this)"')
-        self.assertContains(r, "Déclarer une vente EN LIGNE")
-
 
 class TotauxDuStockTests(TestCase):
     @classmethod
