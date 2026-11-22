@@ -122,6 +122,11 @@ def ajuster_stock(reference_id, variation, motif, utilisateur, commentaire=""):
         raise StockInsuffisant(f"Le stock ne peut pas devenir négatif ({ref.quantite} en stock).")
     Reference.objects.filter(pk=ref.pk).update(quantite=F("quantite") + variation)
     shopify.signaler_stock(ref.pk)
+    if variation > 0 and not ref.active:
+        # Article déjà eu par le passé, de nouveau reçu : il réapparaît dans le stock.
+        Reference.objects.filter(pk=ref.pk).update(active=True)
+        if ref.modele_id:
+            Modele.objects.filter(pk=ref.modele_id, active=False).update(active=True)
     if ref.quantite + variation == 0 and ref.est_unique and ref.modele_id and (
         ref.modele.variantes.filter(active=True).exclude(pk=ref.pk).exists()
     ):

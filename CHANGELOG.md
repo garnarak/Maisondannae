@@ -7,6 +7,20 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.2.1 — 22/11/2026
+
+- Anciens articles masqués à 0 (gardés pour l'historique des ventes) : ils n'apparaissent plus
+  dans l'export Excel du stock (case « Inclure les articles masqués » pour les avoir) ni, par
+  défaut, dans Administration → Variantes et Modèles (filtre « Affichage » : Masqués / Tous)
+- Article déjà eu qui revient lors d'un arrivage :
+  - « Nouveau modèle » avec un nom déjà utilisé (même avec d'autres majuscules) : un message
+    mène au modèle existant, sans créer de doublon ;
+  - recevoir des pièces sur une variante masquée (« Reçu », « Ajuster » ou import Excel) la
+    fait réapparaître dans le stock, avec tout son historique ;
+  - Stock : une recherche avec « Voir aussi les articles épuisés » coché retrouve aussi les
+    anciens articles masqués ; la page du modèle les signale par l'étiquette « masqué »
+- Ventes, marge, caisse et export des ventes : inchangés, tout l'historique est conservé
+
 ## 2.2.0 — 22/11/2026
 
 - Onglet « Rupture » supprimé (les articles ne sont pas rachetés à l'identique) : l'onglet

@@ -295,9 +295,14 @@ def _classeur(titre_feuille, colonnes, lignes, largeurs):
     return classeur
 
 
-def exporter_stock():
+def exporter_stock(avec_masques=False):
+    """Une ligne par variante. Les variantes masquées sans stock (anciens articles, gardés pour
+    l'historique des ventes) n'y sont que sur demande : réimporter le fichier ne les touche pas."""
+    variantes = Reference.objects.select_related("categorie", "couleur", "modele")
+    if not avec_masques:
+        variantes = variantes.exclude(active=False, quantite=0)
     variantes = sorted(
-        Reference.objects.select_related("categorie", "couleur", "modele"),
+        variantes,
         key=lambda v: (v.categorie.nom if v.categorie else "", v.modele.nom, ORDRE_TAILLES.get(v.taille, 99),
                        v.couleur.nom if v.couleur else ""),
     )

@@ -4,9 +4,13 @@
 <div class="module" style="max-width: 760px">
   <h2>Exporter</h2>
   <div style="padding: 12px 16px">
-    <p><a class="button" href="{% url 'excel_export_stock' %}">Télécharger le stock (.xlsx)</a></p>
+    <form method="get" action="{% url 'excel_export_stock' %}">
+      <input type="submit" value="Télécharger le stock (.xlsx)">
+      <label style="margin-left: 12px"><input type="checkbox" name="masques" value="1"> Inclure les articles masqués</label>
+    </form>
     <p class="help">Une ligne par variante, avec modèle, taille, couleur, SKU, catégorie, coût d'achat, prix de vente, quantité et valeur du stock.
-      Ce fichier peut être modifié puis réimporté ci-dessous.</p>
+      Ce fichier peut être modifié puis réimporté ci-dessous. Les articles masqués sans stock (anciens articles gardés pour l'historique
+      des ventes) n'y figurent que si la case est cochée ; les réimporter n'est pas nécessaire.</p>
     <form method="get" action="{% url 'excel_export_ventes' %}" style="margin-top: 20px">
       <label>Ventes du <input type="date" name="debut" value="{{ debut }}" required></label>
       <label>au <input type="date" name="fin" value="{{ fin }}" required></label>

@@ -47,6 +47,13 @@ def stock_list(request):
     )
     if q:
         refs = refs.filter(designation__icontains=q)
+        if epuises:
+            # Une recherche précise retrouve aussi les anciens articles masqués (article déjà eu
+            # qui revient lors d'un arrivage).
+            refs = (Reference.objects.filter(designation__icontains=q)
+                    .select_related("categorie", "couleur", "modele")
+                    .annotate(ordre_taille=Case(*[When(taille=t, then=i) for t, i in ORDRE_TAILLES.items()], default=99))
+                    .order_by("modele__nom", "ordre_taille", "couleur__nom"))
     categorie = request.GET.get("categorie", "")
     if categorie.isdigit():
         refs = refs.filter(categorie_id=int(categorie))

@@ -15,6 +15,17 @@ class ModeleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["categorie"].required = True
         self.fields["categorie"].empty_label = "— Choisir une catégorie —"
+        self.modele_existant = None
+
+    def clean_nom(self):
+        nom = " ".join(self.cleaned_data["nom"].split())
+        existant = Modele.objects.filter(nom__iexact=nom).exclude(pk=self.instance.pk).first()
+        if existant:
+            # Article déjà eu par le passé : on le réutilise plutôt que d'en créer un double
+            # (la page affiche un lien vers lui).
+            self.modele_existant = existant
+            raise forms.ValidationError(f"Le modèle « {existant.nom} » existe déjà.")
+        return nom
 
 
 class VariantesForm(forms.Form):
