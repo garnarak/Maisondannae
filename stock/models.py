@@ -94,6 +94,10 @@ class Modele(models.Model):
         "prix de vente", max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
     )
     active = models.BooleanField(default=True, help_text="Décocher pour masquer un modèle arrêté.")
+    # Produit Shopify correspondant, et son statut d'avant l'archivage automatique (vide si
+    # l'outil ne l'a pas archivé) : un modèle épuisé est archivé, puis remis comme avant s'il revient.
+    shopify_product_id = models.CharField(max_length=80, blank=True, editable=False)
+    shopify_statut_avant_archivage = models.CharField(max_length=20, blank=True, editable=False)
     cree_le = models.DateTimeField(auto_now_add=True)
     modifie_le = models.DateTimeField(auto_now=True)
 

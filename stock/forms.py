@@ -66,10 +66,6 @@ class VenteForm(forms.Form):
         required=False,
         empty_value=0,
     )
-    canal = forms.ChoiceField(choices=Vente.Canal.choices, initial=Vente.Canal.MAGASIN, required=False)
-
-    def clean_canal(self):
-        return self.cleaned_data["canal"] or Vente.Canal.MAGASIN
 
 
 class PaiementForm(VenteForm):

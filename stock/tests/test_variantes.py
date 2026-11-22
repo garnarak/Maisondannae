@@ -106,8 +106,11 @@ class VariantesTests(TestCase):
         self.assertContains(r, '<span class="variante">M · Noir</span>', html=True)
         m = Reference.objects.get(taille="M")
         vendre(m.pk, 2, self.lea)
-        r = self.client.get(reverse("ruptures"))
-        self.assertContains(r, "Robe portefeuille — M · Noir")
+        # Épuisée : elle quitte la liste, et réapparaît en cochant « Voir aussi les articles épuisés ».
+        r = self.client.get(reverse("stock_list"))
+        self.assertEqual([v.taille for v in r.context["references"]], ["S", "L"])
+        r = self.client.get(reverse("stock_list") + "?epuises=1")
+        self.assertEqual([v.taille for v in r.context["references"]], ["S", "M", "L"])
         self.assertEqual(Reference.objects.get(taille="S").quantite, 2)
 
 

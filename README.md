@@ -24,7 +24,7 @@ ajustements de stock et synthèse mensuelle de la marge. Utilisable sur ordinate
 - **Ajustement** : réception, casse, inventaire… Tracé avec un motif, mais n'entre pas
   dans la marge. Le stock ne peut jamais devenir négatif.
 - **Marge** = (prix de vente − coût d'achat) × quantité, sur les ventes du mois.
-- Chaque vente porte un `canal` (magasin / en ligne) pour préparer la boutique en ligne.
+- Chaque vente porte un `canal` : boutique (saisie dans l'outil) ou en ligne (commande Shopify).
 
 ## Lancer en local
 
@@ -90,6 +90,8 @@ L'outil fait foi pour le stock et les prix ; la boutique Shopify suit automatiqu
 - **Shopify → outil** : chaque commande en ligne devient une vente « En ligne » (prix payé,
   réductions déduites, attribuée à personne) et diminue le stock ; une annulation ou un retour
   remis en stock remet les articles dans l'outil.
+- **Produits épuisés** : quand un modèle n'a plus aucune pièce, l'outil l'archive dans Shopify
+  (il disparaît de la boutique en ligne) ; s'il revient en stock, il retrouve son statut d'avant.
 - Si Shopify est injoignable, la vente est tout de même enregistrée ; l'écart est noté dans
   Administration → Shopify, où le bouton « Tout renvoyer à Shopify » le corrige.
 

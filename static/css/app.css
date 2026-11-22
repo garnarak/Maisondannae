@@ -168,7 +168,6 @@ tr.jour th { background: var(--gold-soft); color: var(--text); text-transform: n
 .bascule { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Ventes en ligne : bouton secondaire à côté de « Vendre » et étiquette dans les listes. */
-button.en-ligne { border-color: var(--accent); color: var(--accent); background: var(--surface); }
 .badge.canal { background: var(--accent); color: var(--accent-text); font-size: .75rem; }
 .repartition { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0 0; font-size: .85rem; }
 .repartition dt { color: var(--accent-soft); }
@@ -217,9 +216,9 @@ small.paiement-detail { display: block; font-size: .78rem; }
 @media (max-width: 520px) { .kpis-stock { grid-template-columns: 1fr 1fr; } }
 .kpi small { display: block; margin-top: 4px; font-size: .8rem; opacity: .85; }
 
-/* Compteur d'articles en rupture dans le menu. */
-.compteur { display: inline-block; min-width: 1.6em; margin-left: 4px; padding: 0 6px; border-radius: 999px;
-  background: var(--accent); color: var(--accent-text); font-size: .7rem; letter-spacing: 0; text-align: center; line-height: 1.6; }
+/* Case « Voir aussi les articles épuisés », sous la barre de recherche du stock. */
+label.check.epuises { display: inline-flex; align-items: center; gap: 8px; margin: -6px 0 18px; font-size: .9rem; color: var(--muted); }
+label.check.epuises input { margin: 0; }
 
 /* Stock sur grand écran avec la colonne Catégorie en premier : on gagne encore un peu
    de place pour éviter la barre de défilement de la version administrateur. */

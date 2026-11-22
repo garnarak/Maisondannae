@@ -28,10 +28,10 @@
       <span class="help">Vérifie la clé et affiche le nom de la boutique.</span></form>
     <form method="post" action="{% url 'shopify_action' 'creer' %}" style="margin-bottom: 12px">{% csrf_token %}
       <input type="submit" value="Créer les produits manquants" {% if not actif %}disabled{% endif %}>
-      <span class="help">Crée dans Shopify, <strong>en brouillon</strong>, chaque modèle qui n'y est pas encore (tailles, couleurs, prix, SKU, quantités). Les photos et descriptions s'ajoutent ensuite dans Shopify.</span></form>
+      <span class="help">Crée dans Shopify, <strong>en brouillon</strong>, chaque modèle en stock qui n'y est pas encore (tailles, couleurs, prix, SKU, quantités). Les photos et descriptions s'ajoutent ensuite dans Shopify.</span></form>
     <form method="post" action="{% url 'shopify_action' 'resynchroniser' %}" style="margin-bottom: 12px">{% csrf_token %}
       <input type="submit" value="Tout renvoyer à Shopify" {% if not actif %}disabled{% endif %}>
-      <span class="help">Renvoie le stock et le prix de toutes les variantes. L'outil fait foi.</span></form>
+      <span class="help">Renvoie le stock et le prix de toutes les variantes (l'outil fait foi) et archive les produits épuisés.</span></form>
     <form method="post" action="{% url 'shopify_action' 'abonner' %}">{% csrf_token %}
       <input type="submit" value="Recevoir les commandes" {% if not actif %}disabled{% endif %}>
       <span class="help">Demande à Shopify de prévenir l'outil des commandes, annulations et remboursements, à l'adresse <code>{{ adresse_notifications }}</code>.</span></form>
