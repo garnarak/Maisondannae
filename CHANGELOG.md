@@ -7,6 +7,13 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.2.2 — 22/11/2026
+
+- Import Excel du stock : sur l'écran de vérification, choix du motif des pièces ajoutées,
+  « Réassort / réception » (un arrivage, choix par défaut) ou « Correction d'inventaire »
+  (un recomptage) ; les pièces retirées restent en correction d'inventaire. L'écran indique
+  le nombre de pièces ajoutées et retirées
+
 ## 2.2.1 — 22/11/2026
 
 - Anciens articles masqués à 0 (gardés pour l'historique des ventes) : ils n'apparaissent plus

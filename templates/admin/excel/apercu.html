@@ -18,6 +18,17 @@
   {% endif %}
 
   <form method="post" action="{% url 'excel_import_stock' %}" style="margin: 16px 0">{% csrf_token %}
+    {% if ajoutees %}
+    <fieldset class="module" style="padding: 8px 16px; margin-bottom: 16px">
+      <p style="margin: 4px 0 8px"><strong>{{ ajoutees }}</strong> pièce{{ ajoutees|pluralize }} ajoutée{{ ajoutees|pluralize }} au stock{% if retirees %},
+        <strong>{{ retirees }}</strong> retirée{{ retirees|pluralize }} (enregistrée{{ retirees|pluralize }} en correction d'inventaire){% endif %}.
+        Les pièces ajoutées sont :</p>
+      {% for valeur, libelle in motifs %}
+      <label style="display: block; margin: 4px 0"><input type="radio" name="motif_hausses" value="{{ valeur }}" {% if forloop.first %}checked{% endif %}>
+        {% if valeur == "reassort" %}un <strong>arrivage</strong> (motif « {{ libelle }} »){% else %}un <strong>recomptage</strong> du stock (motif « {{ libelle }} »){% endif %}</label>
+      {% endfor %}
+    </fieldset>
+    {% endif %}
     <input type="submit" name="confirmer" value="Confirmer l'import" class="default">
     <a href="{% url 'excel_accueil' %}" style="margin-left: 16px">Annuler</a>
   </form>

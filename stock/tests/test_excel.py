@@ -71,6 +71,41 @@ class ImportStockTests(TestCase):
         ajustement = Ajustement.objects.get()
         self.assertEqual((ajustement.variation, ajustement.motif), (-2, Ajustement.Motif.INVENTAIRE))
 
+    def test_motif_des_pieces_ajoutees(self):
+        pull = Categorie.objects.get(nom="Pull")
+        Reference.objects.create(designation="Pull angora", categorie=pull, cout_achat=20, prix_vente=50, quantite=5)
+        Reference.objects.create(designation="Pull col roulé", categorie=pull, cout_achat=20, prix_vente=50, quantite=4)
+        lignes = [[None, "Pull angora", "Pull", 20, 50, 8, "True"],      # +3
+                  [None, "Pull col roulé", "Pull", 20, 50, 1, "True"],   # −3
+                  [None, "Pull neuf", "Pull", 20, 50, 2, "True"]]        # +2 (création)
+        r = self._verifier(lignes)
+        self.assertContains(r, "<strong>5</strong> pièces ajoutées au stock")
+        self.assertContains(r, 'name="motif_hausses" value="reassort" checked')
+        # Arrivage : les pièces ajoutées sont un réassort, les pièces retirées une correction.
+        self.client.post(reverse("excel_import_stock"), {"confirmer": "1", "motif_hausses": "reassort"})
+        motifs = {a.reference.designation: (a.variation, a.motif) for a in Ajustement.objects.all()}
+        self.assertEqual(motifs, {
+            "Pull angora": (3, Ajustement.Motif.REASSORT),
+            "Pull col roulé": (-3, Ajustement.Motif.INVENTAIRE),
+            "Pull neuf": (2, Ajustement.Motif.REASSORT),
+        })
+
+    def test_recomptage_et_motif_inconnu(self):
+        pull = Categorie.objects.get(nom="Pull")
+        Reference.objects.create(designation="Pull angora", categorie=pull, cout_achat=20, prix_vente=50, quantite=5)
+        self._verifier([[None, "Pull angora", "Pull", 20, 50, 6, "True"]])
+        self.client.post(reverse("excel_import_stock"), {"confirmer": "1", "motif_hausses": "inventaire"})
+        self.assertEqual(Ajustement.objects.get().motif, Ajustement.Motif.INVENTAIRE)
+        self._verifier([[None, "Pull angora", "Pull", 20, 50, 7, "True"]])
+        self.client.post(reverse("excel_import_stock"), {"confirmer": "1", "motif_hausses": "casse"})
+        self.assertEqual(Ajustement.objects.latest("date").motif, Ajustement.Motif.INVENTAIRE)
+
+    def test_pas_de_choix_sans_pieces_ajoutees(self):
+        pull = Categorie.objects.get(nom="Pull")
+        Reference.objects.create(designation="Pull angora", categorie=pull, cout_achat=20, prix_vente=50, quantite=5)
+        r = self._verifier([[None, "Pull angora", "Pull", 20, 50, 2, "True"]])
+        self.assertNotContains(r, "motif_hausses")
+
     def test_erreurs_bloquantes(self):
         r = self._verifier([[None, "Pull", "Pull", "abc", 55, 3, "True"], [None, "Jupe", "Jupe", 10, 30, 1.5, "True"]])
         self.assertContains(r, "Rien n'a été importé")

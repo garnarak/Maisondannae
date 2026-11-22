@@ -77,6 +77,7 @@ class LigneImport:
     active: bool
     action: str = ""  # « création », « mise à jour » ou « inchangée »
     details: list = field(default_factory=list)
+    ecart: int = 0  # pièces ajoutées (> 0) ou retirées (< 0) par l'import
 
     @property
     def libelle(self):
@@ -206,7 +207,9 @@ def analyser_stock(fichier):
         v = _variante_existante(l, par_sku, par_cle)
         if v is None:
             l.action = "création"
+            l.ecart = quantite
         else:
+            l.ecart = quantite - v.quantite
             l.modele = v.modele.nom
             changements = []
             if (v.categorie.nom if v.categorie else "") != categorie:
@@ -228,9 +231,11 @@ def analyser_stock(fichier):
 
 
 @transaction.atomic
-def importer_stock(lignes, utilisateur):
+def importer_stock(lignes, utilisateur, motif_hausses=Ajustement.Motif.INVENTAIRE):
     """Enregistre les lignes analysées. Les quantités passent par un ajustement « Import Excel »
-    pour garder la trace des mouvements de stock."""
+    pour garder la trace des mouvements de stock : les pièces ajoutées avec le motif choisi
+    (« Réassort » pour un arrivage, « Correction d'inventaire » pour un recomptage), les pièces
+    retirées toujours en correction d'inventaire."""
     compte = {"création": 0, "mise à jour": 0, "inchangée": 0}
     categories, couleurs, modeles = {}, {}, {}
     variantes = list(Reference.objects.select_related("modele", "couleur"))
@@ -273,7 +278,8 @@ def importer_stock(lignes, utilisateur):
             v.save()
             ecart = l.quantite - v.quantite
         if ecart:
-            services.ajuster_stock(v.pk, ecart, Ajustement.Motif.INVENTAIRE, utilisateur, "Import Excel")
+            motif = motif_hausses if ecart > 0 else Ajustement.Motif.INVENTAIRE
+            services.ajuster_stock(v.pk, ecart, motif, utilisateur, "Import Excel")
         compte[l.action] = compte.get(l.action, 0) + 1
     return compte
 

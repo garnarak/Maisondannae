@@ -10,8 +10,11 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from . import excel
+from .models import Ajustement
 
 SESSION_IMPORT = "import_stock_en_attente"
+# Motifs proposés pour les pièces ajoutées par un import (arrivage ou recomptage).
+MOTIFS_HAUSSES = [Ajustement.Motif.REASSORT, Ajustement.Motif.INVENTAIRE]
 
 
 def reserve_aux_administrateurs(vue):
@@ -69,7 +72,10 @@ def import_stock(request):
         if not lignes:
             messages.error(request, "Aucun import en attente : déposez à nouveau le fichier.")
             return redirect("excel_accueil")
-        compte = excel.importer_stock(lignes, request.user)
+        motif = request.POST.get("motif_hausses")
+        if motif not in MOTIFS_HAUSSES:
+            motif = Ajustement.Motif.INVENTAIRE
+        compte = excel.importer_stock(lignes, request.user, motif)
         messages.success(
             request,
             f"Import terminé : {compte['création']} référence(s) créée(s), {compte['mise à jour']} mise(s) à jour, "
@@ -89,6 +95,9 @@ def import_stock(request):
             mises_a_jour=[l for l in analyse.lignes if l.action == "mise à jour"],
             inchangees=[l for l in analyse.lignes if l.action == "inchangée"],
             pieces=sum(l.quantite for l in analyse.lignes),
+            ajoutees=sum(l.ecart for l in analyse.lignes if l.ecart > 0),
+            retirees=-sum(l.ecart for l in analyse.lignes if l.ecart < 0),
+            motifs=[(m, Ajustement.Motif(m).label) for m in MOTIFS_HAUSSES],
         ))
     messages.error(request, "Choisissez un fichier Excel à importer.")
     return redirect("excel_accueil")
