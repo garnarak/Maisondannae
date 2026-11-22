@@ -25,7 +25,7 @@
         {% for v in variantes %}
           <tr>
             <td data-label="Taille">{{ v.get_taille_display }}</td>
-            <td data-label="Couleur">{{ v.couleur.nom|default:"—" }}</td>
+            <td data-label="Couleur">{{ v.couleur.nom|default:"—" }}{% if not v.active %} <span class="badge-masque" title="Masqué : réapparaît dans le stock dès que des pièces sont reçues">masqué</span>{% endif %}</td>
             <td data-label="SKU"><code>{{ v.sku }}</code></td>
             <td class="num" data-label="Stock"><span class="qty {% if v.quantite == 0 %}zero{% elif v.quantite <= 2 %}low{% endif %}">{{ v.quantite }}</span></td>
             <td class="num" data-label="Reçu"><input type="number" name="q_{{ v.pk }}" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Pièces reçues, {{ v.libelle_variante }}"></td>
@@ -35,7 +35,7 @@
         </tbody>
       </table>
       </div>
-      <small class="muted">« Reçu » : nombre de pièces réceptionnées, ajouté au stock (motif « Réassort »). Pour une casse ou une correction, utilisez « Ajuster ».</small>
+      <small class="muted">« Reçu » : nombre de pièces réceptionnées, ajouté au stock (motif « Réassort »). Une variante « masquée » (article déjà eu par le passé) réapparaît dans le stock dès qu'elle reçoit des pièces. Pour une casse ou une correction, utilisez « Ajuster ».</small>
       <button class="primary block">Enregistrer l'entrée en stock</button>
     </form>
 

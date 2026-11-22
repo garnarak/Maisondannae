@@ -45,7 +45,8 @@ def accueil(request):
 
 @reserve_aux_administrateurs
 def export_stock(request):
-    return _telechargement(excel.exporter_stock(), f"stock-{timezone.localdate():%Y-%m-%d}.xlsx")
+    avec_masques = request.GET.get("masques") == "1"
+    return _telechargement(excel.exporter_stock(avec_masques), f"stock-{timezone.localdate():%Y-%m-%d}.xlsx")
 
 
 @reserve_aux_administrateurs

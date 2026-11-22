@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import Q
 
 from .models import Ajustement, Categorie, CommandeShopify, CorrectionPaiement, Couleur, Modele, RecuperationEspeces, Reference, User, Vente
 
@@ -32,6 +33,41 @@ class CouleurAdmin(admin.ModelAdmin):
         return obj.variantes.count()
 
 
+class AffichageFiltre(admin.SimpleListFilter):
+    """Par défaut, seuls les articles affichés dans l'outil : les anciens articles masqués
+    (gardés pour l'historique des ventes) se retrouvent avec « Masqués » ou « Tous »."""
+
+    title = "affichage"
+    parameter_name = "affichage"
+
+    def lookups(self, request, model_admin):
+        return [("masques", "Masqués"), ("tous", "Tous")]
+
+    def choices(self, changelist):
+        yield {"selected": self.value() is None, "query_string": changelist.get_query_string(remove=[self.parameter_name]),
+               "display": "Affichés"}
+        for valeur, libelle in self.lookup_choices:
+            yield {"selected": self.value() == valeur,
+                   "query_string": changelist.get_query_string({self.parameter_name: valeur}), "display": libelle}
+
+    def queryset(self, request, queryset):
+        if self.value() == "tous":
+            return queryset
+        masques = self.masques(queryset)
+        return masques if self.value() == "masques" else queryset.exclude(pk__in=masques.values("pk"))
+
+
+class VariantesAffichage(AffichageFiltre):
+    def masques(self, queryset):
+        return queryset.filter(active=False)
+
+
+class ModelesAffichage(AffichageFiltre):
+    def masques(self, queryset):
+        # Modèle masqué, ou dont toutes les variantes sont masquées.
+        return queryset.filter(Q(active=False) | (Q(variantes__isnull=False) & ~Q(variantes__active=True))).distinct()
+
+
 class VarianteInline(admin.TabularInline):
     model = Reference
     fields = ["taille", "couleur", "sku", "quantite", "active"]
@@ -47,7 +83,7 @@ class VarianteInline(admin.TabularInline):
 @admin.register(Modele)
 class ModeleAdmin(admin.ModelAdmin):
     list_display = ["nom", "categorie", "cout_achat", "prix_vente", "nombre_de_variantes", "active"]
-    list_filter = ["active", "categorie"]
+    list_filter = [ModelesAffichage, "categorie"]
     search_fields = ["nom"]
     inlines = [VarianteInline]
 
@@ -62,7 +98,7 @@ class ModeleAdmin(admin.ModelAdmin):
 @admin.register(Reference)
 class ReferenceAdmin(admin.ModelAdmin):
     list_display = ["designation", "categorie", "taille", "couleur", "sku", "prix_vente", "quantite", "active"]
-    list_filter = ["active", "categorie", "taille", "couleur"]
+    list_filter = [VariantesAffichage, "categorie", "taille", "couleur"]
     search_fields = ["designation", "sku"]
     fields = ["modele", "taille", "couleur", "sku", "quantite", "active"]
     # Le modèle porte nom, prix et coût ; la quantité passe par les ventes et ajustements.
