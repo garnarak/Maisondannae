@@ -4,7 +4,7 @@
 {% block content %}
 <div class="toolbar">
   <h1>Stock <span class="compte-stock">{{ pieces_en_stock }} article{{ pieces_en_stock|pluralize }}{% if filtre_actif %} dans la sélection{% endif %} · {{ nb_references }} référence{{ nb_references|pluralize }}</span></h1>
-  <form method="get" class="search">
+  <form method="get" class="search" id="recherche-stock">
     <input type="search" name="q" value="{{ q }}" placeholder="Rechercher une référence…" aria-label="Rechercher">
     <select name="categorie" aria-label="Catégorie" onchange="this.form.submit()">
       <option value="">Toutes les catégories</option>
@@ -13,6 +13,8 @@
   </form>
   {% if user.is_admin %}<a class="button primary" href="{% url 'modele_create' %}" aria-label="Nouveau modèle">+ <span class="hors-telephone">Nouveau modèle</span><span class="sur-telephone">Modèle</span></a>{% endif %}
 </div>
+
+<label class="check epuises"><input type="checkbox" name="epuises" value="1" form="recherche-stock" onchange="this.form.submit()" {% if epuises %}checked{% endif %}> Voir aussi les articles épuisés</label>
 
 {% if user.is_admin %}
 <div class="kpis kpis-stock">
@@ -63,7 +65,7 @@
       </td>
     </tr>
   {% empty %}
-    <tr><td colspan="9" class="muted">Aucune référence{% if q %} pour « {{ q }} »{% endif %}.</td></tr>
+    <tr><td colspan="9" class="muted">Aucune référence{% if q %} pour « {{ q }} »{% endif %}{% if not epuises %} en stock{% endif %}.</td></tr>
   {% endfor %}
   </tbody>
 </table>

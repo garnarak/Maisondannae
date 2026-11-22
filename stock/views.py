@@ -36,9 +36,10 @@ def admin_required(view):
 @login_required
 def stock_list(request):
     q = request.GET.get("q", "").strip()
-    # Les articles en rupture (0 pièce) sont dans l'onglet « Rupture », pas ici.
+    # Les articles épuisés (0 pièce) ne sont affichés que sur demande.
+    epuises = request.GET.get("epuises") == "1"
     refs = (
-        Reference.objects.filter(active=True, quantite__gt=0)
+        Reference.objects.filter(active=True, **({} if epuises else {"quantite__gt": 0}))
         .select_related("categorie", "couleur", "modele")
         # Variantes d'un même modèle regroupées, tailles dans l'ordre XS → XXL.
         .annotate(ordre_taille=Case(*[When(taille=t, then=i) for t, i in ORDRE_TAILLES.items()], default=99))
@@ -63,7 +64,8 @@ def stock_list(request):
             # Coût d'achat et prix de vente totaux : réservés aux administrateurs.
             "cout_total": (totaux["cout_total"] or Decimal(0)) if request.user.is_admin else None,
             "vente_totale": (totaux["vente_totale"] or Decimal(0)) if request.user.is_admin else None,
-            "filtre_actif": bool(q or categorie.isdigit()),
+            "filtre_actif": bool(q or categorie.isdigit() or epuises),
+            "epuises": epuises,
             "references": refs,
             "q": q,
             "categorie_choisie": int(categorie) if categorie.isdigit() else None,
@@ -74,15 +76,9 @@ def stock_list(request):
     )
 
 
-@login_required
 def ruptures(request):
-    refs = (
-        Reference.objects.filter(active=True, quantite=0)
-        .select_related("categorie")
-        .annotate(derniere_vente=Max("ventes__date"))
-        .order_by("categorie__nom", "designation")
-    )
-    return render(request, "stock/ruptures.html", {"ruptures": refs})
+    """Ancienne adresse de l'onglet « Rupture » (supprimé en 2.2.0) : le stock avec les épuisés."""
+    return redirect(f"{reverse('stock_list')}?epuises=1")
 
 
 @login_required

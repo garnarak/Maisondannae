@@ -31,8 +31,10 @@ class FausseBoutique:
         self.panne = False
         self.abonnements = []
         self.ancienne_api = False
+        self.statuts = {}  # produit -> ACTIVE / DRAFT / ARCHIVED
 
-    def ajouter(self, sku, produit="gid://shopify/Product/1"):
+    def ajouter(self, sku, produit="gid://shopify/Product/1", statut="ACTIVE"):
+        self.statuts.setdefault(produit, statut)
         n = len(self.variantes) + 1
         self.variantes[sku] = {"id": f"gid://shopify/ProductVariant/{n}", "inventory": f"gid://shopify/InventoryItem/{n}",
                                "product": produit, "price": None, "quantite": None}
@@ -73,11 +75,16 @@ class FausseBoutique:
         elif nom == "CreerProduit":
             produit = f"gid://shopify/Product/{100 + len(self.requetes)}"
             for ligne in v["input"]["variants"]:
-                self.ajouter(ligne["inventoryItem"]["sku"], produit)
+                self.ajouter(ligne["inventoryItem"]["sku"], produit, v["input"]["status"])
                 self.variantes[ligne["inventoryItem"]["sku"]]["quantite"] = ligne["inventoryQuantities"][0]["quantity"]
             data = {"productSet": {"userErrors": [], "product": {"id": produit, "variants": {"nodes": [
                 {"id": self.variantes[l["inventoryItem"]["sku"]]["id"], "sku": l["inventoryItem"]["sku"],
                  "inventoryItem": {"id": self.variantes[l["inventoryItem"]["sku"]]["inventory"]}} for l in v["input"]["variants"]]}}}}
+        elif nom == "Statuts":
+            data = {"nodes": [{"id": i, "status": self.statuts[i]} if i in self.statuts else None for i in v["ids"]]}
+        elif nom == "Statut":
+            self.statuts[v["product"]["id"]] = v["product"]["status"]
+            data = {"productUpdate": {"userErrors": []}}
         elif nom == "Abonnements":
             data = {"webhookSubscriptions": {"nodes": [{"id": "x", "topic": t, "uri": u} for t, u in self.abonnements]}}
         elif nom == "Abonner":
@@ -201,6 +208,71 @@ class EnvoiVersShopify(BaseShopify):
         self.assertEqual(self.s.shopify_variant_id, "")
 
 
+class ArchivageAutomatique(BaseShopify):
+    """Option B (2.2.0) : un modèle épuisé est archivé dans Shopify, puis remis comme avant s'il revient."""
+
+    PRODUIT = "gid://shopify/Product/1"
+
+    def tout_vendre(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            vendre(self.s.pk, 3, self.vendeuse)
+        with self.captureOnCommitCallbacks(execute=True):
+            vendre(self.m.pk, 2, self.vendeuse)
+
+    def test_epuise_puis_de_retour(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            vendre(self.s.pk, 3, self.vendeuse)
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ACTIVE")  # il reste du M
+        with self.captureOnCommitCallbacks(execute=True):
+            vente = vendre(self.m.pk, 2, self.vendeuse)
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ARCHIVED")
+        self.modele.refresh_from_db()
+        self.assertEqual((self.modele.shopify_product_id, self.modele.shopify_statut_avant_archivage), (self.PRODUIT, "ACTIVE"))
+        self.assertTrue(EvenementShopify.objects.filter(action="Archivage").exists())
+        # Vente annulée : la pièce revient, le produit est remis en ligne.
+        with self.captureOnCommitCallbacks(execute=True):
+            services.annuler_vente(vente.pk)
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ACTIVE")
+        self.modele.refresh_from_db()
+        self.assertEqual(self.modele.shopify_statut_avant_archivage, "")
+
+    def test_un_brouillon_redevient_brouillon(self):
+        self.boutique.statuts[self.PRODUIT] = "DRAFT"
+        self.tout_vendre()
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ARCHIVED")
+        with self.captureOnCommitCallbacks(execute=True):
+            services.entree_en_stock({self.s.pk: 1}, self.admin)
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "DRAFT")
+
+    def test_un_produit_archive_a_la_main_n_est_pas_remis_en_ligne(self):
+        self.boutique.statuts[self.PRODUIT] = "ARCHIVED"
+        with self.captureOnCommitCallbacks(execute=True):
+            services.entree_en_stock({self.s.pk: 1}, self.admin)
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ARCHIVED")
+        self.assertNotIn("Statut", self.boutique.noms())
+
+    def test_commande_en_ligne_de_la_derniere_piece(self):
+        services.ajuster_stock(self.s.pk, -3, Ajustement.Motif.INVENTAIRE, self.admin)
+        corps = json.dumps(commande(lignes=[{"id": 1, "sku": self.m.sku, "title": "Robe", "quantity": 2, "price": "60"}])).encode()
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(reverse("shopify_notifications"), corps, content_type="application/json",
+                             HTTP_X_SHOPIFY_TOPIC="orders/create", HTTP_X_SHOPIFY_WEBHOOK_ID="w1",
+                             HTTP_X_SHOPIFY_HMAC_SHA256=signer(corps))
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ARCHIVED")
+
+    def test_le_renvoi_complet_archive_les_epuises_deja_dans_shopify(self):
+        Reference.objects.filter(pk__in=[self.s.pk, self.m.pk]).update(quantite=0)  # épuisés avant 2.2.0
+        shopify.resynchroniser_tout()
+        self.assertEqual(self.boutique.statuts[self.PRODUIT], "ARCHIVED")
+        self.assertTrue(EvenementShopify.objects.filter(action="Renvoi complet", statut="ok").exists())
+
+    def test_les_modeles_epuises_ne_sont_pas_crees(self):
+        self.boutique.variantes.clear()
+        Reference.objects.filter(pk__in=[self.s.pk, self.m.pk]).update(quantite=0)
+        self.assertEqual(shopify.creer_produits_manquants(), (0, 0))
+        self.assertNotIn("CreerProduit", self.boutique.noms())
+
+
 class CreationDeProduits(BaseShopify):
     def test_cree_en_brouillon_les_modeles_absents(self):
         self.boutique.variantes.clear()
@@ -227,10 +299,15 @@ class CreationDeProduits(BaseShopify):
     def test_article_a_taille_unique_decline_ensuite(self):
         foulard = services.creer_modele("Foulard", None, Decimal("5"), Decimal("15"), ["TU"], [])
         unique = foulard.variantes.get()
+        services.ajuster_stock(unique.pk, 1, Ajustement.Motif.REASSORT, self.admin)
         self.assertEqual(shopify.creer_produits_manquants(), (1, 0))
-        # Le foulard existe finalement en deux couleurs : la variante unique vide est masquée…
+        # Le foulard existe finalement en deux couleurs : la variante unique vidée est masquée…
+        services.ajuster_stock(unique.pk, -1, Ajustement.Motif.INVENTAIRE, self.admin)
         rouge, _ = Couleur.objects.get_or_create(nom="Rouge")
-        services.ajouter_variantes(foulard, ["TU"], [self.noir, rouge])
+        services.ajouter_variantes(foulard, ["TU"], [self.noir])
+        services.ajouter_variantes(foulard, ["TU"], [rouge])
+        for v in foulard.variantes.exclude(pk=unique.pk):
+            services.ajuster_stock(v.pk, 1, Ajustement.Motif.REASSORT, self.admin)
         unique.refresh_from_db()
         self.assertFalse(unique.active)
         # … et le produit Shopify à taille unique est signalé, sans être créé en double.

@@ -52,8 +52,11 @@ def action(request, nom):
             boutique, emplacements = shopify.tester_connexion()
             messages.success(request, f"Connexion réussie à « {boutique} ». Emplacement(s) de stock : {', '.join(emplacements) or 'aucun'}.")
         elif nom == "resynchroniser":
-            shopify.resynchroniser_tout()
-            messages.success(request, "Stock et prix renvoyés à Shopify. Le détail est dans le journal ci-dessous.")
+            if shopify.lancer_en_arriere_plan(shopify.resynchroniser_tout):
+                messages.success(request, "Renvoi du stock et des prix en cours (une à deux minutes) : rechargez la page "
+                                          "pour suivre le détail dans le journal ci-dessous.")
+            else:
+                messages.success(request, "Stock et prix renvoyés à Shopify. Le détail est dans le journal ci-dessous.")
         elif nom == "creer":
             n, incomplets = shopify.creer_produits_manquants()
             messages.success(request, f"{n} produit(s) créé(s) dans Shopify, en brouillon : vérifiez-les puis publiez-les depuis Shopify."

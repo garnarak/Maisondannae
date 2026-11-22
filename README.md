@@ -90,6 +90,8 @@ L'outil fait foi pour le stock et les prix ; la boutique Shopify suit automatiqu
 - **Shopify → outil** : chaque commande en ligne devient une vente « En ligne » (prix payé,
   réductions déduites, attribuée à personne) et diminue le stock ; une annulation ou un retour
   remis en stock remet les articles dans l'outil.
+- **Produits épuisés** : quand un modèle n'a plus aucune pièce, l'outil l'archive dans Shopify
+  (il disparaît de la boutique en ligne) ; s'il revient en stock, il retrouve son statut d'avant.
 - Si Shopify est injoignable, la vente est tout de même enregistrée ; l'écart est noté dans
   Administration → Shopify, où le bouton « Tout renvoyer à Shopify » le corrige.
 

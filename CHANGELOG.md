@@ -7,6 +7,19 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.2.0 — 22/11/2026
+
+- Onglet « Rupture » supprimé (les articles ne sont pas rachetés à l'identique) : l'onglet
+  Stock montre les articles disponibles, et la case « Voir aussi les articles épuisés »
+  affiche aussi ceux à 0 pièce (pour corriger une vente ou faire un réassort exceptionnel)
+- Shopify : un modèle épuisé (plus aucune pièce dans ses tailles et couleurs) est
+  automatiquement archivé, donc retiré de la boutique en ligne ; s'il revient en stock, il
+  retrouve son statut d'avant (actif ou brouillon). Un produit archivé à la main n'est jamais
+  remis en ligne par l'outil
+- Shopify, « Créer les produits manquants » : les modèles épuisés ne sont plus créés
+- Shopify, « Tout renvoyer à Shopify » : se fait en arrière-plan (suivi dans le journal) et
+  archive au passage les produits déjà épuisés
+
 ## 2.1.0 — 17/11/2026
 
 - Couleurs d'une variante (« Nouveau modèle » et Stock → Modifier) : une couleur cochée donne

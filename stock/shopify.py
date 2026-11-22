@@ -117,6 +117,14 @@ M_STOCK_ANCIEN = """mutation StockAJour($input: InventorySetQuantitiesInput!) {
 M_PRIX = """mutation PrixAJour($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
   productVariantsBulkUpdate(productId: $productId, variants: $variants) { userErrors { field message } }
 }"""
+Q_STATUTS = """query Statuts($ids: [ID!]!) { nodes(ids: $ids) { ... on Product { id status } } }"""
+M_STATUT = """mutation Statut($product: ProductUpdateInput!) {
+  productUpdate(product: $product) { userErrors { field message } }
+}"""
+# Forme des versions d'API plus anciennes.
+M_STATUT_ANCIEN = """mutation Statut($input: ProductInput!) {
+  productUpdate(input: $input) { userErrors { field message } }
+}"""
 M_PRODUIT = """mutation CreerProduit($input: ProductSetInput!) {
   productSet(synchronous: true, input: $input) {
     product { id variants(first: 100) { nodes { id sku inventoryItem { id } } } }
@@ -153,10 +161,14 @@ def lier_variantes(variantes, client=None, verifier=False):
     for i in range(0, len(a_lier), TAILLE_LOT):
         lot = {v.sku: v for v in a_lier[i:i + TAILLE_LOT]}
         q = " OR ".join(f'sku:"{sku}"' for sku in lot)
-        trouves = {}
+        trouves, produits = {}, {}
         for n in client.graphql(Q_VARIANTES, {"q": q})["productVariants"]["nodes"]:
             if n.get("sku") in lot:
                 trouves[n["sku"]] = (n["id"], n["inventoryItem"]["id"])
+                if lot[n["sku"]].modele_id and (n.get("product") or {}).get("id"):
+                    produits[lot[n["sku"]].modele_id] = n["product"]["id"]
+        for modele_id, produit in produits.items():
+            Modele.objects.filter(pk=modele_id).exclude(shopify_product_id=produit).update(shopify_product_id=produit)
         for sku, v in lot.items():
             ids = trouves.get(sku, ("", ""))
             if ids != (v.shopify_variant_id, v.shopify_inventory_item_id):
@@ -179,6 +191,7 @@ def pousser_stock(ids, client=None):
             for i in range(0, len(liees), TAILLE_LOT):
                 _envoyer_quantites(client, emplacement, liees[i:i + TAILLE_LOT])
         Reference.objects.filter(pk__in=[v.pk for v in liees]).update(shopify_a_synchroniser=False)
+        mettre_a_jour_statuts({v.modele_id for v in liees if v.modele_id}, client)
         absentes = [v.designation for v in variantes if not v.shopify_inventory_item_id]
         message = ", ".join(f"{v.designation} : {v.quantite}" for v in liees)
         if absentes:
@@ -206,6 +219,56 @@ def _envoyer_quantites(client, emplacement, variantes):
             "name": "available", "reason": "correction", "ignoreCompareQuantity": True, "quantities": quantites,
         }})["inventorySetQuantities"]
     _verifier_erreurs(resultat, "Mise à jour du stock")
+
+
+def _changer_statut(client, produit, statut):
+    try:
+        resultat = client.graphql(M_STATUT, {"product": {"id": produit, "status": statut}})["productUpdate"]
+    except ErreurShopify as e:
+        if "ProductUpdateInput" not in str(e) and "product" not in str(e):
+            raise
+        resultat = client.graphql(M_STATUT_ANCIEN, {"input": {"id": produit, "status": statut}})["productUpdate"]
+    _verifier_erreurs(resultat, "Changement de statut")
+
+
+def mettre_a_jour_statuts(modele_ids, client=None):
+    """Un modèle épuisé (plus aucune pièce sur ses variantes présentes dans Shopify) est archivé
+    dans Shopify : il disparaît de la boutique en ligne. S'il revient en stock, il retrouve le
+    statut qu'il avait avant (actif ou brouillon). Un produit archivé à la main n'est jamais
+    remis en ligne par l'outil."""
+    client = client or ClientShopify()
+    modeles = list(Modele.objects.filter(pk__in=modele_ids).prefetch_related("variantes"))
+    # Toutes les variantes du modèle doivent être liées avant de conclure qu'il est épuisé
+    # (sinon une taille encore en stock mais jamais envoyée serait ignorée).
+    sans_produit = [m for m in modeles if not m.shopify_product_id]
+    if sans_produit:  # liens créés avant la version 2.2.0 : on retrouve le produit par les SKU
+        lier_variantes([v for m in sans_produit for v in m.variantes.all()], client, verifier=True)
+    lier_variantes([v for m in modeles if m.shopify_product_id for v in m.variantes.all()], client)
+    modeles = list(Modele.objects.filter(pk__in=modele_ids).prefetch_related("variantes"))
+    modeles = [m for m in modeles if m.shopify_product_id]
+    for i in range(0, len(modeles), 50):
+        lot = modeles[i:i + 50]
+        statuts = {n["id"]: n["status"] for n in client.graphql(Q_STATUTS, {"ids": [m.shopify_product_id for m in lot]})["nodes"]
+                   if n and n.get("id")}
+        for m in lot:
+            liees = [v for v in m.variantes.all() if v.shopify_variant_id]
+            statut = statuts.get(m.shopify_product_id)
+            if not liees or statut is None:
+                continue
+            en_stock = sum(v.quantite for v in liees) > 0
+            if not en_stock and statut != "ARCHIVED":
+                _changer_statut(client, m.shopify_product_id, "ARCHIVED")
+                Modele.objects.filter(pk=m.pk).update(shopify_statut_avant_archivage=statut)
+                journaliser(EvenementShopify.Sens.ENVOI, "Archivage", EvenementShopify.Statut.OK,
+                            f"{m} : épuisé, retiré de la boutique en ligne")
+            elif en_stock and statut == "ARCHIVED" and m.shopify_statut_avant_archivage:
+                _changer_statut(client, m.shopify_product_id, m.shopify_statut_avant_archivage)
+                Modele.objects.filter(pk=m.pk).update(shopify_statut_avant_archivage="")
+                remis = "remis en ligne" if m.shopify_statut_avant_archivage == "ACTIVE" else "remis en brouillon"
+                journaliser(EvenementShopify.Sens.ENVOI, "Désarchivage", EvenementShopify.Statut.OK,
+                            f"{m} : de nouveau en stock, {remis}")
+            elif statut != "ARCHIVED" and m.shopify_statut_avant_archivage:
+                Modele.objects.filter(pk=m.pk).update(shopify_statut_avant_archivage="")  # changé à la main
 
 
 def pousser_prix(modele_id, client=None):
@@ -268,6 +331,8 @@ def creer_produits_manquants(client=None):
             if absentes:
                 incomplets.append(f"{modele} : " + ", ".join(f"{v.libelle_variante} (SKU {v.sku})" for v in absentes))
             continue
+        if not any(v.quantite for v in vs):
+            continue  # modèle épuisé : inutile de le mettre en ligne
         vs.sort(key=lambda v: (ORDRE_TAILLES.get(v.taille, 99), v.couleur.nom if v.couleur else ""))
         tailles = list(dict.fromkeys(v.get_taille_display() for v in vs))
         couleurs = list(dict.fromkeys(v.couleur.nom for v in vs if v.couleur))
@@ -292,6 +357,8 @@ def creer_produits_manquants(client=None):
             } for v in vs],
         }})["productSet"]
         _verifier_erreurs(resultat, f"Création de « {modele} »")
+        Modele.objects.filter(pk=modele.pk).update(shopify_product_id=resultat["product"]["id"],
+                                                    shopify_statut_avant_archivage="")
         par_sku = {v.sku: v for v in vs}
         for n in resultat["product"]["variants"]["nodes"]:
             if n.get("sku") in par_sku:
@@ -310,12 +377,34 @@ def creer_produits_manquants(client=None):
 
 
 def resynchroniser_tout(client=None):
-    """Renvoie le stock de toutes les variantes et le prix de tous les modèles."""
+    """Renvoie le stock de toutes les variantes et le prix de tous les modèles présents dans
+    Shopify ; archive au passage les produits épuisés."""
     client = client or ClientShopify()
     lier_variantes(list(Reference.objects.all()), client, verifier=True)
     pousser_stock(list(Reference.objects.values_list("pk", flat=True)), client)
-    for modele_id in Modele.objects.values_list("pk", flat=True):
+    for modele_id in Modele.objects.exclude(shopify_product_id="").values_list("pk", flat=True):
         pousser_prix(modele_id, client)
+    journaliser(EvenementShopify.Sens.ENVOI, "Renvoi complet", EvenementShopify.Statut.OK, "Stock et prix renvoyés.")
+
+
+def lancer_en_arriere_plan(fonction):
+    """Lance une opération longue (renvoi complet) sans faire attendre la page. Renvoie False
+    quand elle a été faite tout de suite (tests)."""
+    if not settings.SHOPIFY_EN_ARRIERE_PLAN:
+        fonction()
+        return False
+
+    def tache():
+        try:
+            fonction()
+        except Exception as e:  # noqa: BLE001
+            journal.exception("Opération Shopify en arrière-plan")
+            journaliser(EvenementShopify.Sens.ENVOI, "Renvoi complet", EvenementShopify.Statut.ERREUR, str(e))
+        finally:
+            connection.close()
+
+    threading.Thread(target=tache, daemon=True).start()
+    return True
 
 
 _en_attente = threading.local()
