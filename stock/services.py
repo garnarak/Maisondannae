@@ -223,6 +223,21 @@ def creer_modele(nom, categorie, cout_achat, prix_vente, tailles, couleurs):
 
 
 @transaction.atomic
+def reprendre_modele(modele, categorie, cout_achat, prix_vente, tailles, couleurs):
+    """Article déjà eu qui revient : catégorie, coût et prix saisis s'appliquent (les ventes
+    passées gardent leur coût), et les tailles × couleur choisies sont créées si besoin. Les
+    variantes restent masquées tant qu'elles n'ont pas de pièces : « Reçu » les fait réapparaître."""
+    modele.categorie, modele.cout_achat, modele.prix_vente = categorie, cout_achat, prix_vente
+    modele.save()
+    if not modele.active:
+        # Réactivé sans réafficher d'un coup ses anciennes variantes vides.
+        Modele.objects.filter(pk=modele.pk).update(active=True)
+        modele.active = True
+    ajouter_variantes(modele, tailles, couleurs)
+    return modele
+
+
+@transaction.atomic
 def entree_en_stock(quantites, utilisateur, motif=Ajustement.Motif.REASSORT):
     """quantites : {variante_id: nombre de pièces reçues}. Chaque entrée est tracée en ajustement."""
     total = 0

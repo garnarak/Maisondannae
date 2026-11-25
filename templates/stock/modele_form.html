@@ -4,15 +4,16 @@
 <a class="back" href="{% url 'stock_list' %}">← Retour au stock</a>
 <div class="card formulaire-modele">
   <h1>Nouveau modèle</h1>
-  {% if form.modele_existant %}
-  <div class="msg msg-warning">
-    <strong>Vous avez déjà eu cet article.</strong> Pour ne pas créer de doublon,
-    <a href="{% url 'modele_edit' form.modele_existant.pk %}">ouvrez le modèle « {{ form.modele_existant.nom }} »</a>
-    et saisissez les pièces reçues dans la colonne « Reçu » (ajoutez d'abord la taille ou la couleur si elle manque) :
-    il réapparaîtra dans le stock avec tout son historique.
-  </div>
-  {% endif %}
   <form method="post">{% csrf_token %}
+    {% if form.modele_existant %}
+    <div class="msg msg-warning reprise">
+      <p><strong>Vous avez déjà eu cet article : « {{ form.modele_existant.nom }} ».</strong>
+        Reprenez-le plutôt que d'en créer un double : la catégorie, le coût, le prix, les tailles et la couleur
+        saisis ci-dessous s'appliquent, et il garde tout son historique de ventes.</p>
+      <button class="primary" name="reprendre" value="{{ form.modele_existant.pk }}">Reprendre cet article</button>
+      <a href="{% url 'modele_edit' form.modele_existant.pk %}">ou ouvrir sa page sans rien changer</a>
+    </div>
+    {% endif %}
     {% include "stock/_champs.html" with form=form %}
     <h2>Tailles et couleurs</h2>
     <p class="muted">Une variante est créée pour chaque taille cochée, dans la couleur choisie. Pour d'autres couleurs du même modèle, ajoutez-les ensuite sur la page du modèle. Le prix et le coût sont les mêmes pour toutes.</p>
