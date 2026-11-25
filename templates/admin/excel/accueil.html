@@ -31,7 +31,8 @@
       <li>Coût, prix et catégorie sont ceux du modèle : identiques sur toutes ses lignes.</li>
       <li>Une variante existante (même SKU, ou même modèle + taille + couleur) est <strong>mise à jour</strong> ; sinon elle est créée.</li>
       <li>Une catégorie ou une couleur inconnue est ajoutée automatiquement ; « - » ou vide = sans catégorie.</li>
-      <li>Les changements de quantité sont tracés comme ajustements « Import Excel ».</li>
+      <li>Les changements de quantité sont tracés comme ajustements « Import Excel » : pour les pièces ajoutées, vous choisirez
+        sur l'écran suivant s'il s'agit d'un arrivage (« Réassort ») ou d'un recomptage (« Correction d'inventaire »).</li>
       <li>Rien n'est enregistré avant votre confirmation sur l'écran suivant.</li>
     </ul>
     <form method="post" action="{% url 'excel_import_stock' %}" enctype="multipart/form-data">{% csrf_token %}

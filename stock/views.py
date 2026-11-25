@@ -249,6 +249,17 @@ def modele_create(request):
             request, f"Modèle « {modele} » créé avec {modele.variantes.count()} variante(s). Indiquez les quantités reçues."
         )
         return redirect("modele_edit", pk=modele.pk)
+    if request.method == "POST" and request.POST.get("reprendre") and form.modele_existant:
+        # Article déjà eu : « Reprendre cet article » applique la saisie à l'ancien modèle,
+        # comme s'il était créé, en gardant son historique.
+        if set(form.errors) == {"nom"} and variantes_form.is_valid() and str(form.modele_existant.pk) == request.POST["reprendre"]:
+            modele = services.reprendre_modele(
+                form.modele_existant, form.cleaned_data["categorie"], form.cleaned_data["cout_achat"],
+                form.cleaned_data["prix_vente"], variantes_form.cleaned_data["tailles"],
+                list(variantes_form.cleaned_data["couleurs"]),
+            )
+            messages.success(request, f"Article « {modele} » repris, avec son historique. Indiquez les quantités reçues.")
+            return redirect("modele_edit", pk=modele.pk)
     return render(request, "stock/modele_form.html", {"form": form, "variantes_form": variantes_form})
 
 

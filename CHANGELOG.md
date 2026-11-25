@@ -7,6 +7,17 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.2.2 — 25/11/2026
+
+- Import Excel du stock : sur l'écran de vérification, choix du motif des pièces ajoutées,
+  « Réassort / réception » (un arrivage, choix par défaut) ou « Correction d'inventaire »
+  (un recomptage) ; les pièces retirées restent en correction d'inventaire. L'écran indique
+  le nombre de pièces ajoutées et retirées
+- Nouveau modèle : quand le nom correspond à un article déjà eu, un bouton « Reprendre cet
+  article » applique la saisie (catégorie, coût, prix, tailles, couleur) à l'ancien modèle et
+  ouvre sa page, prête pour la colonne « Reçu ». Pas de doublon, l'historique est conservé ;
+  les ventes passées gardent leur coût et leur prix
+
 ## 2.2.1 — 22/11/2026
 
 - Anciens articles masqués à 0 (gardés pour l'historique des ventes) : ils n'apparaissent plus

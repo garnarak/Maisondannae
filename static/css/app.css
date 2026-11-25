@@ -297,3 +297,8 @@ table.variantes code { font-size: .78rem; color: var(--muted); }
 .badge-masque { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: .72rem;
   letter-spacing: .04em; background: var(--gold-soft); color: var(--gold-text); vertical-align: middle; }
 .msg a { color: inherit; font-weight: 600; }
+
+/* « Vous avez déjà eu cet article » : bouton « Reprendre cet article ». */
+.msg.reprise p { margin: 0 0 12px; }
+.msg.reprise a { margin-left: 12px; font-weight: 500; }
+@media (max-width: 520px) { .msg.reprise a { display: block; margin: 12px 0 0; } }

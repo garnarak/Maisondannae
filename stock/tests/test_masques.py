@@ -66,6 +66,48 @@ class ArticlesMasquesTests(TestCase):
         self.assertContains(r, reverse("modele_edit", args=[self.ancien.pk]))
         self.assertEqual(Modele.objects.filter(nom__icontains="chocolat").count(), 1)
 
+    def test_reprendre_cet_article(self):
+        donnees = {"categorie": self.pull.pk, "nom": "Body DENTELLE chocolat", "cout_achat": "9.50", "prix_vente": "29",
+                   "tailles": ["S", "M"], "couleurs": [self.noir.pk]}
+        r = self.client.post(reverse("modele_create"), donnees)
+        self.assertContains(r, "Reprendre cet article")
+        r = self.client.post(reverse("modele_create"), {**donnees, "reprendre": str(self.ancien.pk)}, follow=True)
+        self.assertRedirects(r, reverse("modele_edit", args=[self.ancien.pk]))
+        self.assertContains(r, "repris, avec son historique")
+        self.ancien.refresh_from_db()
+        self.assertEqual((self.ancien.nom, self.ancien.cout_achat, self.ancien.prix_vente),
+                         ("Body dentelle chocolat", Decimal("9.50"), Decimal("29.00")))
+        self.assertEqual(Modele.objects.filter(nom__iexact="body dentelle chocolat").count(), 1)  # pas de doublon
+        nouvelles = self.ancien.variantes.exclude(pk=self.ancienne_variante.pk)
+        self.assertEqual(sorted(v.taille for v in nouvelles), ["M", "S"])
+        self.assertEqual({v.prix_vente for v in self.ancien.variantes.all()}, {Decimal("29.00")})
+        # La vente passée garde son prix et son coût d'origine.
+        self.vente.refresh_from_db()
+        self.assertEqual((self.vente.prix_unitaire, self.vente.cout_unitaire), (Decimal("25.00"), Decimal("8.00")))
+        # L'article n'apparaît dans le stock qu'une fois les pièces reçues.
+        self.assertNotContains(self.client.get(reverse("stock_list")), "Body dentelle chocolat")
+        s = nouvelles.get(taille="S")
+        self.client.post(reverse("modele_edit", args=[self.ancien.pk]), {"action": "entree", f"q_{s.pk}": "2"})
+        self.assertContains(self.client.get(reverse("stock_list")), "Body dentelle chocolat")
+
+    def test_reprendre_un_modele_masque_ne_reaffiche_pas_ses_anciennes_variantes(self):
+        Modele.objects.filter(pk=self.ancien.pk).update(active=False)
+        self.client.post(reverse("modele_create"), {
+            "categorie": self.pull.pk, "nom": "Body dentelle chocolat", "cout_achat": "8", "prix_vente": "25",
+            "tailles": ["M"], "reprendre": str(self.ancien.pk),
+        })
+        self.ancien.refresh_from_db()
+        self.assertTrue(self.ancien.active)
+        self.assertFalse(Reference.objects.get(pk=self.ancienne_variante.pk).active)
+
+    def test_reprendre_refuse_si_le_formulaire_est_incomplet(self):
+        r = self.client.post(reverse("modele_create"), {
+            "categorie": self.pull.pk, "nom": "Body dentelle chocolat", "cout_achat": "8", "prix_vente": "25",
+            "reprendre": str(self.ancien.pk),  # aucune taille cochée
+        })
+        self.assertContains(r, "Sélectionnez au moins une taille")
+        self.assertEqual(self.ancien.variantes.count(), 1)
+
     def test_recevoir_des_pieces_reaffiche_l_article(self):
         r = self.client.get(reverse("modele_edit", args=[self.ancien.pk]))
         self.assertContains(r, "masqué")
