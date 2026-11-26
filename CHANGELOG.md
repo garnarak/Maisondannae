@@ -7,6 +7,21 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.3.0 — 26/11/2026
+
+- Nouvel écran **Stock → Arrivage** (administrateurs) : tout un réassort saisi dans un seul
+  tableau (article, catégorie, taille, couleur, pièces reçues, coût, prix), puis vérifié et
+  enregistré d'un coup avec le motif « Réassort » :
+  - article vide = même article que la ligne du dessus ; catégorie, coût et prix vides =
+    ceux déjà saisis pour l'article, sinon ceux de l'article déjà connu (affichés en gris) ;
+  - un article déjà eu est repris automatiquement (proposé pendant la frappe), avec son
+    historique ; les pièces s'ajoutent au stock existant ; une même ligne saisie deux fois
+    est additionnée ;
+  - « blanc/terracotta » devient « Blanc / Terracotta » ; taille vide = taille unique ;
+  - Entrée passe à la ligne suivante ; total des pièces et de la valeur d'achat en direct ;
+  - récapitulatif avant d'enregistrer (pièces, articles nouveaux / déjà eus, valeur d'achat) ;
+  - la saisie est gardée dans le navigateur si la page est rechargée
+
 ## 2.2.2 — 25/11/2026
 
 - Import Excel du stock : sur l'écran de vérification, choix du motif des pièces ajoutées,

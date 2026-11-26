@@ -11,6 +11,7 @@
       {% for c in categories %}<option value="{{ c.pk }}" {% if c.pk == categorie_choisie %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
     </select>
   </form>
+  {% if user.is_admin %}<a class="button hors-telephone" href="{% url 'arrivage' %}">Arrivage</a>{% endif %}
   {% if user.is_admin %}<a class="button primary" href="{% url 'modele_create' %}" aria-label="Nouveau modèle">+ <span class="hors-telephone">Nouveau modèle</span><span class="sur-telephone">Modèle</span></a>{% endif %}
 </div>
 

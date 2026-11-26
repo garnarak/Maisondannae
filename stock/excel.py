@@ -135,6 +135,13 @@ def analyser_stock(fichier):
     if manquantes:
         analyse.erreurs.append("Colonnes manquantes : " + ", ".join(manquantes) + ".")
         return analyse
+    return analyser_lignes(entetes, enumerate(lignes, start=numero + 1), analyse)
+
+
+def analyser_lignes(entetes, lignes_numerotees, analyse=None):
+    """Vérifie des lignes de stock (numéro, valeurs) dont les colonnes sont données par
+    `entetes` ({titre normalisé: index}). Sert à l'import Excel et à l'écran « Arrivage »."""
+    analyse = analyse or AnalyseImport()
     colonne_modele = "MODÈLE" if _cle("MODÈLE") in entetes else "DÉSIGNATION"
 
     def cellule(ligne, colonne):
@@ -147,7 +154,7 @@ def analyser_stock(fichier):
     categories = {_cle(c.nom): c.nom for c in Categorie.objects.all()}
     couleurs = {_cle(c.nom): c.nom for c in Couleur.objects.all()}
     vues, skus, modeles = set(), set(), {}
-    for numero, ligne in enumerate(lignes, start=numero + 1):
+    for numero, ligne in lignes_numerotees:
         nom = str(cellule(ligne, colonne_modele) or "").strip()
         if not nom:
             continue  # ligne vide ou ligne de total

@@ -302,3 +302,19 @@ table.variantes code { font-size: .78rem; color: var(--muted); }
 .msg.reprise p { margin: 0 0 12px; }
 .msg.reprise a { margin-left: 12px; font-weight: 500; }
 @media (max-width: 520px) { .msg.reprise a { display: block; margin: 12px 0 0; } }
+
+/* Écran « Arrivage » : tout le réassort dans un tableau. */
+.aide-arrivage { max-width: 980px; margin: -8px 0 20px; line-height: 1.5; }
+.erreurs-arrivage { margin: 8px 0 0; padding-left: 20px; }
+table.arrivage { min-width: 900px; }
+table.arrivage td { padding: 4px 6px; }
+table.arrivage input, table.arrivage select { width: 100%; min-height: 36px; padding: 6px 10px; margin: 0; border-radius: 8px; font-size: .92rem; }
+table.arrivage td:nth-child(2) { min-width: 240px; }
+table.arrivage td.num input { width: 96px; text-align: right; padding-right: 14px; }
+table.arrivage td.numero { color: var(--muted); font-size: .8rem; width: 32px; }
+table.arrivage tr.connu td:nth-child(2) input { border-color: var(--gold); }
+table.arrivage input::placeholder { color: var(--muted); opacity: .75; font-style: italic; }
+.barre-arrivage { display: flex; align-items: center; gap: 16px; margin: 16px 0 40px; flex-wrap: wrap; }
+.barre-arrivage .totaux-arrivage { margin-left: auto; font-weight: 500; }
+.recap-arrivage { margin-bottom: 24px; }
+.recap-arrivage details { margin: 12px 0 16px; }

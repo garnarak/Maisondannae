@@ -1,11 +1,12 @@
 from django.urls import path
 
-from . import views
+from . import arrivage, views
 
 urlpatterns = [
     path("", views.stock_list, name="stock_list"),
     path("ruptures/", views.ruptures, name="ruptures"),
     path("modeles/nouveau/", views.modele_create, name="modele_create"),
+    path("arrivage/", arrivage.arrivage, name="arrivage"),
     path("modeles/<int:pk>/", views.modele_edit, name="modele_edit"),
     path("references/<int:pk>/modifier/", views.reference_edit, name="reference_edit"),
     path("references/<int:pk>/vendre/", views.vendre, name="vendre"),

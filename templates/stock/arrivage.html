@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Arrivage{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'stock_list' %}">← Retour au stock</a>
+<div class="toolbar">
+  <h1>Arrivage</h1>
+</div>
+<p class="muted aide-arrivage">Une ligne par article dans une taille et une couleur, avec le nombre de pièces reçues.
+  <strong>Article vide</strong> = même article que la ligne du dessus (autre couleur ou taille).
+  <strong>Catégorie, coût ou prix vides</strong> = ceux déjà saisis pour l'article, ou ceux de l'article déjà connu (repris avec son historique).
+  Deux couleurs : « Blanc / Terracotta ». Taille vide = taille unique. Entrée passe à la ligne suivante.</p>
+
+{% if analyse.erreurs %}
+<div class="msg msg-error">
+  <strong>À corriger avant d'enregistrer :</strong>
+  <ul class="erreurs-arrivage">{% for e in analyse.erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{% if recap %}
+<section class="card recap-arrivage">
+  <h2>Vérification</h2>
+  <div class="kpis">
+    <div class="kpi accent"><span>Pièces reçues</span><strong>{{ recap.pieces }}</strong></div>
+    <div class="kpi"><span>Articles</span><strong>{{ recap.articles }}</strong>
+      <small>{{ recap.nouveaux }} nouveau{{ recap.nouveaux|pluralize:"x" }} · {{ recap.repris }} déjà eu{{ recap.repris|pluralize }}</small></div>
+    <div class="kpi"><span>Valeur d'achat</span><strong>{{ recap.valeur|floatformat:"2g" }} €</strong></div>
+  </div>
+  {% if analyse.nouvelles_categories %}<p>Nouvelles catégories créées : <strong>{{ analyse.nouvelles_categories|join:", " }}</strong>.</p>{% endif %}
+  {% if analyse.nouvelles_couleurs %}<p>Nouvelles couleurs ajoutées à la liste : <strong>{{ analyse.nouvelles_couleurs|join:", " }}</strong>.</p>{% endif %}
+  {% if analyse.avertissements %}<ul class="muted">{% for a in analyse.avertissements %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+  <details>
+    <summary>Détail ligne par ligne</summary>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Ligne</th><th>Article</th><th class="num">Reçu</th><th>Changements</th></tr></thead>
+      <tbody>{% for l, recu in recap.lignes %}
+        <tr><td>{{ l.numero }}</td><td>{{ l.libelle }}</td><td class="num">{{ recu }}</td>
+          <td>{% if l.action == "création" %}nouveau{% else %}{{ l.details|join:" · " }}{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </details>
+  <form method="post" id="confirmer-arrivage">{% csrf_token %}
+    <button class="primary block" name="confirmer" value="1">Enregistrer l'arrivage ({{ recap.pieces }} pièce{{ recap.pieces|pluralize }})</button>
+  </form>
+  <small class="muted">Rien n'est enregistré avant ce clic. Pour corriger, modifiez le tableau ci-dessous puis vérifiez à nouveau.</small>
+</section>
+{% endif %}
+
+<form method="post" id="tableau-arrivage" autocomplete="off">{% csrf_token %}
+  <div class="table-wrap">
+  <table class="arrivage">
+    <thead><tr>
+      <th class="num">#</th><th>Article</th><th>Catégorie</th><th>Taille</th><th>Couleur</th>
+      <th class="num">Reçu</th><th class="num">Coût d'achat</th><th class="num">Prix de vente</th>
+    </tr></thead>
+    <tbody>
+    {% for l in saisie %}
+      <tr>
+        <td class="num numero">{{ forloop.counter }}</td>
+        <td><input name="nom" value="{{ l.nom }}" list="liste-articles" aria-label="Article"></td>
+        <td><input name="categorie" value="{{ l.categorie }}" list="liste-categories" aria-label="Catégorie"></td>
+        <td><select name="taille" aria-label="Taille">
+          {% for t in tailles %}<option value="{{ t }}" {% if l.taille == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+        </select></td>
+        <td><input name="couleur" value="{{ l.couleur }}" list="liste-couleurs" aria-label="Couleur"></td>
+        <td class="num"><input name="quantite" value="{{ l.quantite }}" inputmode="numeric" aria-label="Pièces reçues"></td>
+        <td class="num"><input name="cout" value="{{ l.cout }}" inputmode="decimal" aria-label="Coût d'achat"></td>
+        <td class="num"><input name="prix" value="{{ l.prix }}" inputmode="decimal" aria-label="Prix de vente"></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="barre-arrivage">
+    <button type="button" id="ajouter-lignes">+ 10 lignes</button>
+    <span class="totaux-arrivage" id="totaux">0 pièce</span>
+    <button class="primary" name="verifier" value="1">Vérifier l'arrivage</button>
+  </div>
+</form>
+
+<datalist id="liste-articles"></datalist>
+<datalist id="liste-categories">{% for c in categories %}<option value="{{ c.nom }}">{% endfor %}</datalist>
+<datalist id="liste-couleurs">{% for c in couleurs %}<option value="{{ c.nom }}">{% endfor %}</datalist>
+{{ articles|json_script:"articles-connus" }}
+<script>
+  (function () {
+    var ARTICLES = JSON.parse(document.getElementById("articles-connus").textContent);
+    var parCle = {};
+    var liste = document.getElementById("liste-articles");
+    Object.keys(ARTICLES).sort().forEach(function (nom) {
+      parCle[cle(nom)] = ARTICLES[nom];
+      var o = document.createElement("option"); o.value = nom; liste.appendChild(o);
+    });
+    var form = document.getElementById("tableau-arrivage"), corps = form.querySelector("tbody");
+    var BROUILLON = "arrivage-brouillon";
+    function cle(t) { return (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim(); }
+    function lignes() { return Array.prototype.slice.call(corps.rows); }
+    function champ(tr, nom) { return tr.querySelector('[name="' + nom + '"]'); }
+    function nombre(v) { var n = parseFloat(String(v).replace(",", ".")); return isNaN(n) ? 0 : n; }
+
+    // Valeurs reprises (ligne du dessus, article déjà saisi, article connu) affichées en gris.
+    function miseAJour() {
+      var precedent = "", saisis = {}, pieces = 0, valeur = 0;
+      lignes().forEach(function (tr) {
+        var nom = champ(tr, "nom").value.trim() || precedent, k = cle(nom);
+        if (champ(tr, "nom").value.trim()) precedent = nom;
+        if (!nom) return;
+        var s = saisis[k] = saisis[k] || ["", "", ""];
+        ["categorie", "cout", "prix"].forEach(function (c, i) { if (champ(tr, c).value.trim() && !s[i]) s[i] = champ(tr, c).value.trim(); });
+      });
+      precedent = "";
+      lignes().forEach(function (tr) {
+        var propre = champ(tr, "nom").value.trim(), nom = propre || precedent, k = cle(nom);
+        if (propre) precedent = propre;
+        var vide = !propre && !champ(tr, "quantite").value.trim() && !champ(tr, "couleur").value.trim();
+        champ(tr, "nom").placeholder = (!propre && nom && !vide) ? nom : "";
+        tr.classList.toggle("connu", !!parCle[k] && !!nom && !vide);
+        ["categorie", "cout", "prix"].forEach(function (c, i) {
+          var repris = nom ? ((saisis[k] || [])[i] || (parCle[k] || [])[i] || "") : "";
+          if (c !== "categorie") repris = repris.replace(/\.00$/, "").replace(".", ",");
+          champ(tr, c).placeholder = (!vide && repris) ? repris : "";
+        });
+        var q = nombre(champ(tr, "quantite").value);
+        pieces += q;
+        valeur += q * nombre(champ(tr, "cout").value || champ(tr, "cout").placeholder);
+      });
+      document.getElementById("totaux").textContent = pieces + " pièce" + (pieces > 1 ? "s" : "") +
+        " · " + valeur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " € d'achat";
+    }
+
+    function ajouter(n) {
+      var modele = corps.rows[corps.rows.length - 1];
+      for (var i = 0; i < n; i++) {
+        var tr = modele.cloneNode(true);
+        tr.querySelectorAll("input").forEach(function (e) { e.value = ""; e.placeholder = ""; });
+        tr.querySelector("select").selectedIndex = 0;
+        corps.appendChild(tr);
+      }
+      lignes().forEach(function (tr, i) { tr.querySelector(".numero").textContent = i + 1; });
+    }
+    document.getElementById("ajouter-lignes").addEventListener("click", function () { ajouter(10); miseAJour(); });
+
+    // Entrée : même colonne, ligne suivante (une ligne est ajoutée au besoin) au lieu d'envoyer.
+    corps.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" || e.target.tagName === "BUTTON") return;
+      e.preventDefault();
+      var tr = e.target.closest("tr");
+      if (!tr.nextElementSibling) ajouter(5);
+      var suivant = champ(tr.nextElementSibling, e.target.name);
+      suivant.focus();
+      if (suivant.select) suivant.select();
+    });
+
+    // Brouillon gardé dans ce navigateur : une page rechargée ne perd pas la saisie.
+    function sauver() {
+      var donnees = lignes().map(function (tr) {
+        var o = {}; ["nom", "categorie", "taille", "couleur", "quantite", "cout", "prix"].forEach(function (c) { o[c] = champ(tr, c).value; }); return o;
+      });
+      try { localStorage.setItem(BROUILLON, JSON.stringify(donnees)); } catch (e) {}
+    }
+    function restaurer() {
+      var donnees;
+      try { donnees = JSON.parse(localStorage.getItem(BROUILLON) || "null"); } catch (e) { donnees = null; }
+      if (!donnees || !donnees.some(function (o) { return o.nom || o.quantite; })) return;
+      if (lignes().some(function (tr) { return champ(tr, "nom").value || champ(tr, "quantite").value; })) return;
+      if (corps.rows.length < donnees.length) ajouter(donnees.length - corps.rows.length);
+      donnees.forEach(function (o, i) { Object.keys(o).forEach(function (c) { champ(corps.rows[i], c).value = o[c]; }); });
+    }
+    corps.addEventListener("input", function () { miseAJour(); sauver(); });
+    corps.addEventListener("change", function () { miseAJour(); sauver(); });
+    var confirmer = document.getElementById("confirmer-arrivage");
+    if (confirmer) confirmer.addEventListener("submit", function () { try { localStorage.removeItem(BROUILLON); } catch (e) {} });
+    restaurer();
+    miseAJour();
+  })();
+</script>
+{% endblock %}
