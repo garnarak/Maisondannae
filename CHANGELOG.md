@@ -7,6 +7,12 @@ Les numéros suivent le principe `MAJEUR.MINEUR.CORRECTIF` :
 
 Le suffixe `-beta` indique une version de test.
 
+## 2.3.0 — 26/11/2026
+
+- Soldes : −15 % et −25 % s'ajoutent aux soldes existants (−10, −20, −30, −40, −50, −70 %),
+  dans l'ordre, avec le prix soldé affiché dans la liste ; marge, ventes et exports en tiennent
+  compte comme pour les autres soldes
+
 ## 2.2.2 — 25/11/2026
 
 - Import Excel du stock : sur l'écran de vérification, choix du motif des pièces ajoutées,
