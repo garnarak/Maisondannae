@@ -12,7 +12,7 @@ from django.utils.text import slugify
 SEUIL_STOCK_FAIBLE = 2
 
 # Pourcentages de solde proposés au vendeur au moment de la vente.
-REMISES = [10, 20, 30, 40, 50, 70]
+REMISES = [10, 15, 20, 25, 30, 40, 50, 70]
 
 
 def prix_remise(prix, remise_pct):

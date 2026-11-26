@@ -51,13 +51,32 @@ class SoldeTests(TestCase):
         self.assertContains(r, "Quantité ou solde invalide")
         self.assertFalse(Vente.objects.exists())
         with self.assertRaises(ValueError):
-            vendre(self.robe.pk, 1, self.admin, remise_pct=15)
+            vendre(self.robe.pk, 1, self.admin, remise_pct=35)
 
     def test_liste_propose_les_prix_soldes(self):
         self.client.force_login(self.vendeuse)
         r = self.client.get(reverse("stock_list"))
         self.assertContains(r, "Prix normal")
         self.assertContains(r, "−70 % · 27,00 €")
+
+    def test_soldes_15_et_25(self):
+        self.assertEqual(prix_remise(Decimal("89.99"), 15), Decimal("76.49"))
+        self.assertEqual(prix_remise(Decimal("89.99"), 25), Decimal("67.49"))
+        self.client.force_login(self.vendeuse)
+        r = self.client.get(reverse("stock_list"))
+        html = r.content.decode()
+        self.assertIn("−15 % · 76,49 €", html)
+        self.assertIn("−25 % · 67,49 €", html)
+        # Dans l'ordre : 10, 15, 20, 25, 30…
+        self.assertLess(html.index("−10 %"), html.index("−15 %"))
+        self.assertLess(html.index("−15 %"), html.index("−20 %"))
+        self.assertLess(html.index("−20 %"), html.index("−25 %"))
+        self.assertLess(html.index("−25 %"), html.index("−30 %"))
+        r = self.client.post(
+            reverse("paiement", args=[self.robe.pk]), {"quantite": 1, "remise_pct": 25, "paiement": "cb"}, follow=True
+        )
+        self.assertContains(r, "soldé −25 % à 67,49 € pièce")
+        self.assertEqual(Vente.objects.get().remise_pct, 25)
 
     def test_historique_et_synthese(self):
         vendre(self.robe.pk, 2, self.vendeuse, remise_pct=30)
